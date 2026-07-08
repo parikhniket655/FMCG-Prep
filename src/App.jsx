@@ -981,16 +981,191 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-6"
               >
-                {/* Intro Card */}
-                <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800">
-                  <h3 className="text-lg font-bold text-white uppercase tracking-wider">
-                    Tata Consumer Products Limited (TCPL) Focus Deck
+                {/* Masterclass Header */}
+                <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800 relative overflow-hidden">
+                  <div className="absolute right-0 top-0 w-48 h-48 bg-red-600/10 rounded-full blur-3xl"></div>
+                  <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Award className="w-5 h-5 text-red-500" />
+                    Tata Consumer Products Limited (TCPL) Corporate Intelligence Deck
                   </h3>
                   <p className="text-xs text-gray-400 mt-2 leading-relaxed max-w-3xl">
-                    TCPL is a leading integrated Foods and Beverages company. Review these fundamental structures, product portfolios, sales structures, and Go-to-Market rules for your upcoming Pre-Placement Interview.
+                    A comprehensive technical repository summarizing TCPL's corporate identity, strategic growth pillars, leadership team, brand matrix, and physical distribution hierarchy. 
                   </p>
                 </div>
 
+                {/* 1. Vision, Mission & Values Block */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  
+                  {/* Vision Card */}
+                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                    <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                      <span>👁️</span> Core Vision
+                    </h4>
+                    <p className="text-sm font-extrabold text-white leading-snug">
+                      "To build better lives and thriving communities."
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed pt-1">
+                      Roots TCPL's commercial operations back to the core Tata Group philosophy of community enrichment, shared trust, and long-term societal value.
+                    </p>
+                  </div>
+
+                  {/* Mission Card */}
+                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                    <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                      <span>🚀</span> Company Mission
+                    </h4>
+                    <p className="text-sm font-extrabold text-white leading-snug">
+                      "To keep passionately growing and innovating every day."
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed pt-1">
+                      Drives the aggressive transformation from a traditional plantation/bulk commodity business (Tata Tea/Tata Coffee) to a fast-moving, high-margin consumer staples and products giant.
+                    </p>
+                  </div>
+
+                  {/* Core Values Card */}
+                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                    <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                      <span>🛡️</span> Five Core Values
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-white font-mono">
+                      <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">🤝 EMPATHY</div>
+                      <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">⚖️ INTEGRITY</div>
+                      <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">⚡ AGILITY</div>
+                      <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">🏆 EXCELLENCE</div>
+                      <div className="bg-[#0B0F19] col-span-2 px-2.5 py-1.5 rounded border border-gray-800 text-center">🎯 OWNERSHIP</div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 2. Leadership and Governance Panel */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* Executive Management */}
+                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                      <Info className="w-4 h-4 text-red-500" />
+                      Executive Leadership Team
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                        <div>
+                          <p className="text-xs font-extrabold text-white uppercase tracking-wider">Sunil D'Souza</p>
+                          <p className="text-[10px] text-gray-500 font-mono mt-0.5">Managing Director & Chief Executive Officer (MD & CEO)</p>
+                        </div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30">Head</span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                        <div>
+                          <p className="text-xs font-extrabold text-white uppercase tracking-wider">Ajit Krishnakumar</p>
+                          <p className="text-[10px] text-gray-500 font-mono mt-0.5">Executive Director & Chief Operating Officer (ED & COO)</p>
+                        </div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-850">Operations</span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                        <div>
+                          <p className="text-xs font-extrabold text-white uppercase tracking-wider">Ashish Goenka</p>
+                          <p className="text-[10px] text-gray-500 font-mono mt-0.5">Group Chief Financial Officer (CFO)</p>
+                        </div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-850">Finance</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Board of Directors */}
+                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                      <Info className="w-4 h-4 text-red-500" />
+                      Board of Directors
+                    </h4>
+                    <div className="space-y-3 text-xs">
+                      <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850">
+                        <p className="text-xs font-extrabold text-white uppercase tracking-wider">Mr. N. Chandrasekaran</p>
+                        <p className="text-[10px] text-gray-500 font-mono mt-0.5">Chairman (Non-Executive Director) • Also Chairman of Tata Sons</p>
+                      </div>
+                      
+                      <div>
+                        <span className="font-bold text-white text-[10px] uppercase tracking-wider block mb-1">Key Independent Directors</span>
+                        <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400 font-mono">
+                          <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">👨‍⚖️ Dr. K. P. Krishnan</div>
+                          <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">🛒 Mr. Bharat Puri</div>
+                          <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">💼 Ms. Shikha Sharma</div>
+                          <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">🔬 Mr. David Crean</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 3. Strategic Framework (6 Pillars) & Sustainability */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  
+                  {/* The Six Strategic Pillars */}
+                  <div className="md:col-span-2 p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      The Six Growth Pillars ("How We Win")
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                        <p className="font-bold text-white mb-1">1. Strengthen Core & Scale Growth</p>
+                        <p className="text-gray-400 text-[11px] leading-relaxed">Protect tea/salt market share while aggressively scaling high-growth businesses (Tata Sampann, Tata Coffee).</p>
+                      </div>
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                        <p className="font-bold text-white mb-1">2. Build on New Opportunities</p>
+                        <p className="text-gray-400 text-[11px] leading-relaxed">Expand portfolio organically and inorganically (acquisitions of Capital Foods and Organic India) to target premium segments.</p>
+                      </div>
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                        <p className="font-bold text-white mb-1">3. Drive Execution Excellence</p>
+                        <p className="text-gray-400 text-[11px] leading-relaxed">Focus on premiumization, cost optimization, expanding rural coverage, and optimizing distributor fill rates.</p>
+                      </div>
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                        <p className="font-bold text-white mb-1">4. Digital & Innovation Acceleration</p>
+                        <p className="text-gray-400 text-[11px] leading-relaxed">Use SFA (Sales Force Automation) systems, digital supply chain tracking, and launching digital-first premium offerings.</p>
+                      </div>
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                        <p className="font-bold text-white mb-1">5. Future-Ready Organization</p>
+                        <p className="text-gray-400 text-[11px] leading-relaxed">Build strong cross-functional sales/marketing capabilities and integrate post-merger operations.</p>
+                      </div>
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                        <p className="font-bold text-white mb-1">6. Embed Sustainability</p>
+                        <p className="text-gray-400 text-[11px] leading-relaxed">Integrate environmental responsibility and social impact across sourcing, packaging, and community relations.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sustainability Commitment */}
+                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-green-500" />
+                      #ForBetter Sustainability Focus
+                    </h4>
+                    <div className="space-y-3 text-xs text-gray-400">
+                      <div className="pb-2 border-b border-gray-850">
+                        <span className="font-bold text-white block">For Better Sourcing</span>
+                        <p className="text-[11px] mt-0.5">100% sustainable agricultural raw materials, supporting tea and coffee growers.</p>
+                      </div>
+                      <div className="pb-2 border-b border-gray-850">
+                        <span className="font-bold text-white block">For a Better Planet</span>
+                        <p className="text-[11px] mt-0.5">Zero-waste to landfills, water-neutral manufacturing, and circular packaging transitions.</p>
+                      </div>
+                      <div className="pb-2 border-b border-gray-850">
+                        <span className="font-bold text-white block">For Better Communities</span>
+                        <p className="text-[11px] mt-0.5">Empowering small tea growers, providing clean water access, and community healthcare.</p>
+                      </div>
+                      <div>
+                        <span className="font-bold text-white block">For Better Nutrition</span>
+                        <p className="text-[11px] mt-0.5">Tata Sampann unpolished staples and Organic India health products delivering clean food.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 4. Brand Matrix & Sales Hierarchy Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
                   {/* House of Brands */}
@@ -1016,10 +1191,10 @@ export default function App() {
                       </div>
 
                       <div>
-                        <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Recent Acquisitions (Synergy Engines)</span>
+                        <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Acquisitions & Growth Vehicles</span>
                         <p className="text-gray-400 leading-normal mt-0.5">
-                          <span className="font-bold text-white">Capital Foods:</span> Ching's Secret (Desi Chinese sauces, noodles) and Smith & Jones (ginger-garlic pastes, baking aids). 
-                          <span className="font-bold text-white block mt-0.5">Organic India:</span> Organic herbal supplements, Tulsi green teas, and healthy infusions.
+                          <span className="font-bold text-white">Capital Foods:</span> Ching's Secret (condiments, instant Chinese noodles) and Smith & Jones (pastes, ginger garlic, aids). 
+                          <span className="font-bold text-white block mt-0.5">Organic India:</span> Organic herbal tea infusions, wellness capsules, and healthy groceries.
                         </p>
                       </div>
                     </div>
@@ -1077,7 +1252,7 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
                     <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
                       <p className="font-bold text-red-500 mb-1">Primary vs Secondary</p>
-                      <p className="text-gray-400 leading-normal">
+                      <p className="text-gray-400 leading-normal font-sans">
                         <span className="font-bold text-white">Primary:</span> Company to Distributor. 
                         <span className="font-bold text-white block">Secondary:</span> Distributor to Retailer (Kirana). ASMs track secondary as it represents real market demand.
                       </p>
@@ -1085,14 +1260,14 @@ export default function App() {
 
                     <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
                       <p className="font-bold text-red-500 mb-1">Beat Plan / PJP</p>
-                      <p className="text-gray-400 leading-normal">
+                      <p className="text-gray-400 leading-normal font-sans">
                         Permanent Journey Plan. The fixed physical route a DSR walks on specific days (e.g. Monday: Sector 1 beat) to maintain high retail touchpoints.
                       </p>
                     </div>
 
                     <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
                       <p className="font-bold text-red-500 mb-1">LPC & LPB</p>
-                      <p className="text-gray-400 leading-normal">
+                      <p className="text-gray-400 leading-normal font-sans">
                         <span className="font-bold text-white">LPC (Lines Per Call):</span> Number of distinct SKUs sold in a visit. 
                         <span className="font-bold text-white block">LPB (Lines Per Bill):</span> Focuses on increasing assortment breadth on retailer shelves.
                       </p>
@@ -1100,7 +1275,7 @@ export default function App() {
 
                     <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
                       <p className="font-bold text-red-500 mb-1">Strike Rate</p>
-                      <p className="text-gray-400 leading-normal">
+                      <p className="text-gray-400 leading-normal font-sans">
                         (Productive Outlets Visited / Total Outlets Visited) × 100. A primary indicator of frontline DSR efficiency and beat layout health.
                       </p>
                     </div>
