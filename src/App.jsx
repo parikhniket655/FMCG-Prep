@@ -691,12 +691,25 @@ export default function App() {
                                 {art.insights ? '✓ Analyzed' : '○ Ready to analyze'}
                               </span>
                               
-                              <button 
-                                onClick={() => handleSelectArticle(art)}
-                                className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors"
-                              >
-                                View Case Analysis <ChevronRight className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="flex items-center gap-2">
+                                {art.url && (
+                                  <a 
+                                    href={art.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="px-2.5 py-1 rounded bg-[#1A2030] hover:bg-[#232B40] text-[9px] font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors border border-gray-800"
+                                  >
+                                    Read Source
+                                  </a>
+                                )}
+                                <button 
+                                  onClick={() => handleSelectArticle(art)}
+                                  className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors"
+                                >
+                                  View Case Analysis <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );
