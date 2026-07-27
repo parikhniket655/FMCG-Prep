@@ -81,6 +81,32 @@ export default function App() {
     }
   }, [newsTab]);
 
+  // Trigger analysis automatically when navigating to the analysis tab
+  useEffect(() => {
+    if (activeTab === 'analysis' && selectedArticle && !selectedArticle.insights && !isLoading) {
+      const runAnalysis = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch('/api/analyze-article', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(selectedArticle)
+          });
+          const data = await response.json();
+          if (data.article) {
+            setArticles(prev => prev.map(a => a.title === selectedArticle.title ? data.article : a));
+            setSelectedArticle(data.article);
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      runAnalysis();
+    }
+  }, [activeTab, selectedArticle]);
+
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -683,152 +709,168 @@ export default function App() {
 
             {/* 2. Analysis Deck Tab */}
             {activeTab === 'analysis' && selectedArticle && (
-              <motion.div 
-                key="analysis"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                {/* Article Header Card */}
-                <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <span className="px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-red-950/40 text-red-400 border border-red-900/30">
-                        {selectedArticle.category}
-                      </span>
-                      <h3 className="text-lg md:text-xl font-extrabold text-white leading-snug uppercase tracking-wide mt-3">{selectedArticle.title}</h3>
-                      <p className="text-xs text-gray-500 font-mono mt-1">{selectedArticle.source} • {selectedArticle.date}</p>
+              isLoading && !selectedArticle.insights ? (
+                <div className="flex flex-col items-center justify-center py-32 bg-[#121724]/40 rounded-2xl border border-gray-800 space-y-4">
+                  <div className="w-10 h-10 border-4 border-red-900/30 border-t-red-600 rounded-full animate-spin"></div>
+                  <p className="text-xs text-gray-500 font-mono uppercase tracking-widest">Generating Strategic Deep-Dive Case...</p>
+                </div>
+              ) : (
+                <motion.div 
+                  key="analysis"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  {/* Article Header Card */}
+                  <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <span className="px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-red-950/40 text-red-400 border border-red-900/30">
+                          {selectedArticle.category}
+                        </span>
+                        <h3 className="text-lg md:text-xl font-extrabold text-white leading-snug uppercase tracking-wide mt-3">{selectedArticle.title}</h3>
+                        <p className="text-xs text-gray-500 font-mono mt-1">{selectedArticle.source} • {selectedArticle.date}</p>
+                      </div>
+                      {selectedArticle.url && (
+                        <a 
+                          href={selectedArticle.url} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1E2538] hover:bg-gray-800 text-xs font-bold uppercase tracking-wider text-white transition-colors"
+                        >
+                          Read Original Article
+                        </a>
+                      )}
                     </div>
-                    {selectedArticle.url && (
-                      <a 
-                        href={selectedArticle.url} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1E2538] hover:bg-gray-800 text-xs font-bold uppercase tracking-wider text-white transition-colors"
-                      >
-                        Read Original Article
-                      </a>
-                    )}
+
+                    <p className="text-xs text-gray-400 leading-relaxed mt-4 border-t border-gray-800/60 pt-4">
+                      <span className="font-bold text-white">Summary:</span> {selectedArticle.summary}
+                    </p>
                   </div>
 
-                  <p className="text-xs text-gray-400 leading-relaxed mt-4 border-t border-gray-800/60 pt-4">
-                    <span className="font-bold text-white">Summary:</span> {selectedArticle.summary}
-                  </p>
-                </div>
-
-                {/* Grid Layout: Left column (Insights & Forces), Right column (Q&A) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  
-                  {/* Left Column: Metrics & Porter's Forces */}
-                  <div className="lg:col-span-1 space-y-6">
+                  {/* Grid Layout: Left column (Insights & Forces), Right column (Q&A) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
-                    {/* Financial/Operational Metrics Card */}
-                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-red-500" />
-                        Key Margin & GTM Metrics
-                      </h4>
-                      <div className="grid grid-cols-1 gap-3">
-                        {selectedArticle.metrics && selectedArticle.metrics.length > 0 ? (
-                          selectedArticle.metrics.map((m, idx) => (
-                            <div key={idx} className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80 flex items-center justify-between">
-                              <span className="text-xs text-gray-400 truncate pr-2">{m.name}</span>
-                              <span className="text-xs font-bold text-white shrink-0 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30 font-mono">{m.value}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-xs text-gray-500">No operational metrics available.</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Strategic Insights */}
-                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-yellow-500" />
-                        Executive Implications
-                      </h4>
-                      <ul className="space-y-3">
-                        {selectedArticle.insights && selectedArticle.insights.map((insight, idx) => (
-                          <li key={idx} className="text-xs text-gray-400 leading-relaxed flex items-start gap-2.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1.5"></span>
-                            {insight}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Porter's 5 Forces Card */}
-                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-blue-500" />
-                        Porter's Five Forces Scorecard
-                      </h4>
-                      <div className="space-y-4 pt-2">
-                        {selectedArticle.forces ? (
-                          selectedArticle.forces.map((f, idx) => {
-                            const colorMap = {
-                              'High': 'bg-red-950/40 text-red-400 border border-red-900/30',
-                              'Medium': 'bg-yellow-950/40 text-yellow-400 border border-yellow-900/30',
-                              'Low': 'bg-green-950/40 text-green-400 border border-green-900/30'
-                            };
-                            return (
-                              <div key={idx} className="space-y-1.5 pb-3 border-b border-gray-800/60 last:border-b-0 last:pb-0">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-xs font-bold text-white">{f.force}</span>
-                                  <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded border ${colorMap[f.rating] || 'bg-gray-800 text-gray-400'}`}>
-                                    {f.rating}
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-gray-400 leading-relaxed font-sans">{f.description}</p>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <p className="text-xs text-gray-500">Porter's 5 forces analysis not available.</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column: PPI Prep Questions & Answers */}
-                  <div className="lg:col-span-2 space-y-6">
-                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-6">
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <HelpCircle className="w-4 h-4 text-red-500" />
-                        TCPL PPI Mock Prep Q&As
-                      </h4>
+                    {/* Left Column: Metrics & Porter's Forces */}
+                    <div className="lg:col-span-1 space-y-6">
                       
-                      <div className="space-y-6">
-                        {selectedArticle.questions && selectedArticle.questions.length > 0 ? (
-                          selectedArticle.questions.map((q, idx) => (
-                            <div key={idx} className="p-5 rounded-xl bg-[#0B0F19]/80 border border-gray-800 space-y-3">
-                              <div className="flex items-start gap-3">
-                                <span className="w-6 h-6 rounded-full bg-red-600/10 border border-red-900/30 flex items-center justify-center font-bold text-xs text-red-500 shrink-0">
-                                  Q{idx + 1}
-                                </span>
-                                <h5 className="text-xs font-bold text-white leading-snug font-mono uppercase tracking-wide mt-1">
-                                  {q.question}
-                                </h5>
+                      {/* Financial/Operational Metrics Card */}
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-red-500" />
+                          Key Margin & GTM Metrics
+                        </h4>
+                        
+                        <div className="space-y-3">
+                          {selectedArticle.metrics && selectedArticle.metrics.length > 0 ? (
+                            selectedArticle.metrics.map((m, idx) => (
+                              <div key={idx} className="flex justify-between items-center bg-[#0B0F19]/60 px-4 py-2.5 rounded-xl border border-gray-850">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{m.name}</span>
+                                <span className="text-xs font-bold text-white uppercase tracking-wider">{m.value}</span>
                               </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-gray-500">No operational metrics extracted.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Executive implications snippet */}
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 font-mono">
+                          <Zap className="w-4 h-4 text-yellow-500" />
+                          Executive Implications
+                        </h4>
+                        <div className="space-y-2 text-xs">
+                          {selectedArticle.insights && selectedArticle.insights.length > 0 ? (
+                            selectedArticle.insights.map((ins, idx) => (
+                              <div key={idx} className="flex items-start gap-2.5 leading-relaxed text-gray-400 pb-2 border-b border-gray-850/60 last:border-b-0 last:pb-0">
+                                <span className="text-red-500 mt-0.5">•</span>
+                                <p>{ins}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-gray-500">Implications analysis not available.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Porter's 5 Forces Rating */}
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-850 pb-2">
+                          <Scale className="w-4 h-4 text-red-500" />
+                          Porter's Five Forces Scorecard
+                        </h4>
+
+                        <div className="space-y-3 text-xs">
+                          {selectedArticle.forces && selectedArticle.forces.length > 0 ? (
+                            selectedArticle.forces.map((f, idx) => {
+                              const ratingColor = f.rating === 'High' 
+                                ? 'text-red-400 bg-red-950/20 border-red-900/30' 
+                                : f.rating === 'Medium' 
+                                  ? 'text-yellow-400 bg-yellow-950/20 border-yellow-900/30' 
+                                  : 'text-green-400 bg-green-950/20 border-green-900/30';
                               
-                              <div className="pl-9 space-y-2 border-l border-gray-800/80 ml-3">
-                                <p className="text-xs text-gray-400 leading-relaxed font-sans">
-                                  <span className="font-bold text-white text-[10px] uppercase tracking-wider block mb-1">Model Answer Framework:</span>
-                                  {q.answer}
-                                </p>
+                              return (
+                                <div key={idx} className="space-y-1">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-bold text-white text-[11px] uppercase tracking-wider">{f.force}</span>
+                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${ratingColor}`}>
+                                      {f.rating}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-gray-400 leading-normal">{f.description}</p>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-xs text-gray-500">Porter's 5 forces analysis not available.</p>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Right Column: Case Questions & Answers */}
+                    <div className="lg:col-span-2 space-y-6">
+                      
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-850 pb-2">
+                          <HelpCircle className="w-4 h-4 text-red-500" />
+                          TCPL PPI Mock Prep Q&As
+                        </h4>
+                        
+                        <div className="space-y-6">
+                          {selectedArticle.questions && selectedArticle.questions.length > 0 ? (
+                            selectedArticle.questions.map((q, idx) => (
+                              <div key={idx} className="p-5 rounded-xl bg-[#0B0F19]/80 border border-gray-800 space-y-3">
+                                <div className="flex items-start gap-3">
+                                  <span className="w-6 h-6 rounded-full bg-red-600/10 border border-red-900/30 flex items-center justify-center font-bold text-xs text-red-500 shrink-0">
+                                    Q{idx + 1}
+                                  </span>
+                                  <h5 className="text-xs font-bold text-white leading-snug font-mono uppercase tracking-wide mt-1">
+                                    {q.question}
+                                  </h5>
+                                </div>
+                                
+                                <div className="pl-9 space-y-2 border-l border-gray-800/80 ml-3">
+                                  <p className="text-xs text-gray-400 leading-relaxed font-sans">
+                                    <span className="font-bold text-white text-[10px] uppercase tracking-wider block mb-1">Model Answer Framework:</span>
+                                    {q.answer}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-xs text-gray-500">Study questions not generated. Connect a Gemini API Key to enable structured corporate Q&A.</p>
-                        )}
+                            ))
+                          ) : (
+                            <p className="text-xs text-gray-500">Study questions not generated. Connect a Gemini API Key to enable structured corporate Q&A.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              )
             )}
 
             {/* 3. Mock Interview Tab */}
