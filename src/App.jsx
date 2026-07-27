@@ -28,6 +28,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function App() {
+  const [userProfile, setUserProfile] = useState(null);
+  const [nameInput, setNameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [companyInput, setCompanyInput] = useState('TCPL');
+  const [roleInput, setRoleInput] = useState('S&M');
+  const [loginError, setLoginError] = useState('');
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [articles, setArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -48,12 +55,31 @@ export default function App() {
   const [inventoryDays, setInventoryDays] = useState(15); // 15 days
   const [creditDays, setCreditDays] = useState(15); // 15 days
 
-  // Fetch initial articles on mount
+  // News tab state
+  const [newsTab, setNewsTab] = useState('FMCG');
+
+  // Load user profile on mount
   useEffect(() => {
-    fetchArticles();
-    // Initialize interview chat
-    resetInterview();
+    const cachedProfile = localStorage.getItem('user_profile');
+    if (cachedProfile) {
+      setUserProfile(JSON.parse(cachedProfile));
+    }
   }, []);
+
+  // Fetch articles and reset interview when profile is loaded
+  useEffect(() => {
+    if (userProfile) {
+      fetchArticles(newsTab);
+      resetInterview();
+    }
+  }, [userProfile]);
+
+  // Fetch news when newsTab changes
+  useEffect(() => {
+    if (userProfile) {
+      fetchArticles(newsTab);
+    }
+  }, [newsTab]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -61,21 +87,23 @@ export default function App() {
     }
   }, [chatMessages]);
 
-  const fetchArticles = async () => {
+  const fetchArticles = async (category = 'FMCG') => {
     setIsLoading(true);
     setScraperError(null);
     try {
       const response = await fetch('/api/fmcg-news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: 'All' })
+        body: JSON.stringify({ category })
       });
       const data = await response.json();
       if (data.articles) {
         setArticles(data.articles);
         // Default to select first article if none selected
-        if (data.articles.length > 0 && !selectedArticle) {
+        if (data.articles.length > 0) {
           setSelectedArticle(data.articles[0]);
+        } else {
+          setSelectedArticle(null);
         }
       }
       if (data.warning) {
@@ -138,15 +166,15 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          company: "Tata Consumer Products",
-          role: "Management Trainee (Sales & Distribution)",
+          company: userProfile ? userProfile.company : "TCPL",
+          role: userProfile ? userProfile.role : "S&M",
           messages: []
         })
       });
       const data = await response.json();
       setChatMessages([{ role: 'assistant', content: data.reply }]);
     } catch (e) {
-      setChatMessages([{ role: 'assistant', content: "Hello! Welcome to your Tata Consumer Products Pre-Placement Interview. Let's start with your background and interest in joining TCPL's foods and beverages divisions." }]);
+      setChatMessages([{ role: 'assistant', content: "Hello! Welcome to your Pre-Placement Interview. Let's start with your background and interest in joining our foods and beverages divisions." }]);
     } finally {
       setIsChatLoading(false);
     }
@@ -166,8 +194,8 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          company: "Tata Consumer Products",
-          role: "Management Trainee (Sales & Distribution)",
+          company: userProfile ? userProfile.company : "TCPL",
+          role: userProfile ? userProfile.role : "S&M",
           messages: newMessages
         })
       });
@@ -179,6 +207,39 @@ export default function App() {
     } finally {
       setIsChatLoading(false);
     }
+  };
+
+  // Login handler
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (!nameInput.trim()) {
+      setLoginError('Name field is required');
+      return;
+    }
+    if (!emailInput.trim()) {
+      setLoginError('Email field is required');
+      return;
+    }
+    const profile = {
+      name: nameInput.trim(),
+      email: emailInput.trim(),
+      company: companyInput,
+      role: roleInput
+    };
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    setUserProfile(profile);
+    setLoginError('');
+  };
+
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem('user_profile');
+    setUserProfile(null);
+    setNameInput('');
+    setEmailInput('');
+    setChatMessages([]);
+    setArticles([]);
+    setSelectedArticle(null);
   };
 
   // Math calculations
@@ -197,6 +258,96 @@ export default function App() {
 
   // Filter lists for tabs
   const savedArticles = articles.filter(a => savedArticleIds.includes(a.id));
+
+  // Render onboarding/login window if session is not active
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen bg-[#080C14] text-gray-200 font-sans flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Background glow animations */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+        
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md p-8 rounded-3xl bg-[#0B0F19]/80 border border-gray-800 backdrop-blur-xl shadow-2xl relative z-10 space-y-6"
+        >
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center font-extrabold text-white text-2xl tracking-wider mx-auto shadow-lg shadow-red-600/20">
+              T
+            </div>
+            <h1 className="text-xl font-extrabold text-white tracking-wider uppercase mt-4">FMCG Intelligence Portal</h1>
+            <p className="text-xs text-gray-400">Professional Case & Go-to-Market Simulator</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            {loginError && (
+              <div className="p-3 bg-red-950/40 border border-red-900/30 rounded-xl text-[11px] text-red-400 font-medium">
+                ⚠️ {loginError}
+              </div>
+            )}
+            
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Full Name</label>
+              <input 
+                type="text" 
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="e.g. Ketan Parikh"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#121724] border border-gray-800 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-500/50 transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Email Address</label>
+              <input 
+                type="email" 
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="e.g. candidate@domain.com"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#121724] border border-gray-800 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-500/50 transition-colors"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Target Company</label>
+                <select 
+                  value={companyInput}
+                  onChange={(e) => setCompanyInput(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#121724] border border-gray-800 text-sm text-white focus:outline-none focus:border-red-500/50 transition-colors cursor-pointer"
+                >
+                  <option value="TCPL">TCPL (Tata Consumer)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Target Role</label>
+                <select 
+                  value={roleInput}
+                  onChange={(e) => setRoleInput(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#121724] border border-gray-800 text-sm text-white focus:outline-none focus:border-red-500/50 transition-colors cursor-pointer"
+                >
+                  <option value="S&M">S&M (Sales & Marketing)</option>
+                </select>
+              </div>
+            </div>
+
+            <button 
+              type="submit"
+              className="w-full py-3 mt-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer shadow-lg shadow-red-600/10"
+            >
+              Enter Preparation Portal
+            </button>
+          </form>
+
+          <p className="text-[9px] text-gray-500 text-center leading-relaxed">
+            By entering, you initialize a sandbox study session. Your dynamic case configurations, S&D math outputs, and interview chats will be custom-generated.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#080C14] text-gray-200 font-sans flex flex-col md:flex-row">
@@ -283,16 +434,25 @@ export default function App() {
         </div>
 
         {/* User Card */}
-        <div className="p-4 border-t border-gray-800 bg-[#090D17]">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center font-bold text-xs text-gray-300">
-              KP
+        <div className="p-4 border-t border-gray-800 bg-[#090D17] flex items-center justify-between">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-red-600/10 border border-red-900/30 flex items-center justify-center font-bold text-xs text-red-500 shrink-0">
+              {userProfile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold text-white truncate">Ketan Parikh</p>
-              <p className="text-[9px] text-gray-500 font-mono truncate">TCPL PPI Prep Mode</p>
+              <p className="text-xs font-bold text-white truncate">{userProfile.name}</p>
+              <p className="text-[9px] text-gray-500 font-mono truncate">{userProfile.company} • {userProfile.role} Prep</p>
             </div>
           </div>
+          <button 
+            onClick={handleLogout}
+            title="Logout Session"
+            className="p-1.5 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-950/20 transition-all cursor-pointer border border-transparent hover:border-red-900/20 shrink-0"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
         </div>
       </aside>
 
@@ -318,7 +478,7 @@ export default function App() {
             {/* Scraping state trigger */}
             {activeTab === 'dashboard' && (
               <button 
-                onClick={fetchArticles}
+                onClick={() => fetchArticles(newsTab)}
                 disabled={isLoading}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-50"
               >
@@ -399,7 +559,26 @@ export default function App() {
 
                 {/* News Lists Grid */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Intelligence Articles Feed</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-800/80 pb-3">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Intelligence Articles Feed</h3>
+                    
+                    {/* Dynamic Precise Tabs */}
+                    <div className="flex items-center gap-1.5 bg-[#0B0F19] p-1 rounded-xl border border-gray-800">
+                      {['FMCG', 'TCPL', 'Consumer', 'Economy'].map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setNewsTab(tab)}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                            newsTab === tab
+                              ? 'bg-red-600 text-white shadow shadow-red-600/10 font-extrabold'
+                              : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   
                   {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-[#121724]/40 rounded-2xl border border-gray-800 space-y-4">

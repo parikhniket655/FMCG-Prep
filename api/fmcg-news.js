@@ -1,10 +1,11 @@
 import https from 'https';
 import { mockArticles } from './mock-db.js';
 
-// Native Node.js helper to fetch Google News RSS feed
-function fetchGoogleNewsRSS() {
+// Native Node.js helper to fetch Google News RSS feed based on targeted query
+function fetchGoogleNewsRSS(query) {
   return new Promise((resolve, reject) => {
-    const url = 'https://news.google.com/rss/search?q=Tata+Consumer+Products+Limited+FMCG+India&hl=en-IN&gl=IN&ceid=IN:en';
+    const encodedQuery = encodeURIComponent(query);
+    const url = `https://news.google.com/rss/search?q=${encodedQuery}&hl=en-IN&gl=IN&ceid=IN:en`;
     
     https.get(url, {
       headers: {
@@ -50,22 +51,12 @@ function fetchGoogleNewsRSS() {
               } catch (e) {}
               
               const cleanLink = linkMatch[1].trim();
-              const lowercaseTitle = title.toLowerCase();
-              let category = 'FMCG';
-              if (lowercaseTitle.includes('tata') || lowercaseTitle.includes('tcpl') || lowercaseTitle.includes('consumer products')) {
-                category = 'Tata Consumer Products';
-              } else if (lowercaseTitle.includes('retail') || lowercaseTitle.includes('store') || lowercaseTitle.includes('outlet')) {
-                category = 'Retail';
-              } else if (lowercaseTitle.includes('commerce') || lowercaseTitle.includes('zepto') || lowercaseTitle.includes('blinkit')) {
-                category = 'E-Commerce';
-              }
-
+              
               items.push({
                 title,
                 url: cleanLink,
                 date: dateStr,
-                source: source,
-                category: category
+                source: source
               });
             }
           }
@@ -79,18 +70,18 @@ function fetchGoogleNewsRSS() {
 }
 
 // Call Gemini API to summarize and extract metrics for an article
-async function enrichArticleWithGemini(article, apiKey) {
+async function enrichArticleWithGemini(article, targetCategory, apiKey) {
   const prompt = `
-Analyze the following FMCG/TCPL news article title and source.
+Analyze the following news article title and source.
 Title: "${article.title}"
 Source: "${article.source}"
+Selected Category Context: "${targetCategory}"
 
 Generate a JSON object matching this structure:
 {
-  "summary": "A concise 2-3 sentence summary explaining what this news is about, focusing on its implications for FMCG/TCPL, distribution channels, margins, or operations.",
-  "category": "FMCG" or "Tata Consumer Products" or "Retail" or "E-Commerce" or "Agri-Business",
+  "summary": "A concise 2-3 sentence summary explaining what this news is about, focusing on its implications for FMCG/TCPL, consumer demands, or Indian economic environment.",
   "metrics": [
-    { "name": "Short metric name (e.g. Sales Growth, Share Price, Raw Cost)", "value": "Detailed metric value (e.g. +14%, Rs 840, Inflated by 12%)" }
+    { "name": "Short metric name (e.g. Price Hike, Sales Velocity, Inflation Rate)", "value": "Detailed metric value (e.g. +10%, Rs 400, Expanded by 4%)" }
   ]
 }
 
@@ -121,14 +112,15 @@ Ensure the metrics list has 2 to 4 items. Do not return any other text, markdown
           const parsed = JSON.parse(responseText);
           resolve({
             ...article,
+            category: targetCategory,
             summary: parsed.summary || `Live updates on ${article.title}.`,
-            category: parsed.category || article.category,
             metrics: parsed.metrics || []
           });
         } catch (e) {
           // Fallback if parsing or Gemini fails
           resolve({
             ...article,
+            category: targetCategory,
             summary: `Live news coverage from ${article.source} concerning ${article.title}. Learn more by opening the source link.`,
             metrics: [
               { name: "Source Coverage", value: article.source },
@@ -142,6 +134,7 @@ Ensure the metrics list has 2 to 4 items. Do not return any other text, markdown
     req.on('error', () => {
       resolve({
         ...article,
+        category: targetCategory,
         summary: `Live news coverage from ${article.source} concerning ${article.title}.`,
         metrics: [
           { name: "Source Coverage", value: article.source }
@@ -159,12 +152,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const category = req.body.category || 'All';
+  const category = req.body.category || 'FMCG';
   const apiKey = process.env.GEMINI_API_KEY;
 
+  // Choose precise search terms based on requested category
+  let searchQuery = '"FMCG India" OR "Fast Moving Consumer Goods India"';
+  if (category === 'TCPL') {
+    searchQuery = '"Tata Consumer Products Limited" OR "TCPL India" OR "Tata Starbucks"';
+  } else if (category === 'Consumer') {
+    searchQuery = '"consumer demand India" OR "consumption spending India" OR "consumer goods India"';
+  } else if (category === 'Economy') {
+    searchQuery = '"Indian economy" OR "inflation India" OR "RBI macroeconomics"';
+  }
+
   try {
-    // 1. Fetch real articles from Google News RSS in real-time
-    const liveArticles = await fetchGoogleNewsRSS();
+    // 1. Fetch real articles from Google News RSS using precise query
+    const liveArticles = await fetchGoogleNewsRSS(searchQuery);
     const topLiveArticles = liveArticles.slice(0, 8); // Limit to top 8 recent articles
 
     let finalArticles = [];
@@ -172,15 +175,16 @@ export default async function handler(req, res) {
     if (apiKey) {
       // 2. If API Key is present, enrich the live RSS headlines dynamically using Gemini
       const enriched = await Promise.all(
-        topLiveArticles.map(art => enrichArticleWithGemini(art, apiKey))
+        topLiveArticles.map(art => enrichArticleWithGemini(art, category, apiKey))
       );
       finalArticles = [...enriched];
     } else {
       // 3. If no API Key, create clean static summaries/metrics for live RSS headlines,
-      // and merge with our high-quality hand-crafted mock DB articles
+      // and merge with our high-quality hand-crafted mock DB articles matching this category
       const basicLive = topLiveArticles.map((art, idx) => ({
         id: `live_${idx}_${Date.now()}`,
         ...art,
+        category: category,
         summary: `Recent reporting on "${art.title}" from ${art.source}. (Connect a Gemini API Key to enable AI-generated deep analysis, S&D metrics, and prep questions).`,
         metrics: [
           { name: "Source Channel", value: art.source },
@@ -188,13 +192,26 @@ export default async function handler(req, res) {
         ]
       }));
 
-      // Merge: Live RSS articles first, then our mock case studies
-      finalArticles = [...basicLive, ...mockArticles];
-    }
+      // Filter local mock articles to fit the requested category context
+      let categoryMockArticles = [...mockArticles];
+      if (category === 'TCPL') {
+        categoryMockArticles = mockArticles.filter(art => art.category === 'Tata Consumer Products');
+      } else if (category === 'FMCG') {
+        categoryMockArticles = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Retail');
+      } else if (category === 'Consumer') {
+        categoryMockArticles = mockArticles.filter(art => art.category === 'E-Commerce' || art.category === 'Retail');
+      } else if (category === 'Economy') {
+        categoryMockArticles = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Agri-Business');
+      }
 
-    // Filter by category if requested
-    if (category !== 'All') {
-      finalArticles = finalArticles.filter(art => art.category === category);
+      // Force category tags of mock fallback to match requested tab for visual consistency
+      const normalizedMock = categoryMockArticles.map(art => ({
+        ...art,
+        category: category
+      }));
+
+      // Merge: Live RSS articles first, then our mock case studies
+      finalArticles = [...basicLive, ...normalizedMock];
     }
 
     // Assign unique IDs to ensure no duplicates in React keys
@@ -206,13 +223,25 @@ export default async function handler(req, res) {
     return res.status(200).json({ articles: finalArticles });
   } catch (err) {
     console.error("Scraper Error:", err);
-    // If RSS fetch fails, fall back entirely to our local mock articles
+    // If RSS fetch fails, fall back entirely to our local mock articles for this category
     let fallback = [...mockArticles];
-    if (category !== 'All') {
-      fallback = fallback.filter(art => art.category === category);
+    if (category === 'TCPL') {
+      fallback = mockArticles.filter(art => art.category === 'Tata Consumer Products');
+    } else if (category === 'FMCG') {
+      fallback = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Retail');
+    } else if (category === 'Consumer') {
+      fallback = mockArticles.filter(art => art.category === 'E-Commerce' || art.category === 'Retail');
+    } else if (category === 'Economy') {
+      fallback = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Agri-Business');
     }
+
+    const normalizedFallback = fallback.map(art => ({
+      ...art,
+      category: category
+    }));
+
     return res.status(200).json({
-      articles: fallback,
+      articles: normalizedFallback,
       warning: "Live RSS feed unavailable. Displaying offline FMCG preparation cases."
     });
   }
