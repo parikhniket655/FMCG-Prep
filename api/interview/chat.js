@@ -74,7 +74,17 @@ Generate the next Interviewer response in character. Do not wrap in markdown or 
       return res.status(200).json({ reply, isOffline: false });
     } catch (err) {
       console.error("Gemini Interview Error:", err);
-      // Fallback on error to offline flow
+      // Fallback on error with diagnostic details
+      const errorMsg = err.message || "Unknown error";
+      const offlineWelcome = `Hello! Welcome to your Tata Consumer Products Limited (TCPL) Pre-Placement Interview. My name is Vikram Sen, and I am the Zonal Sales Head for TCPL West. Today we're evaluating you for the ${targetRole} position.
+
+To start off, please introduce yourself and tell me why you want to work with TCPL, specifically within our integrated Foods & Beverages division (covering tea, salt, spices, Capital Foods, and Organic India).`;
+      
+      return res.status(200).json({ 
+        reply: offlineWelcome, 
+        isOffline: true,
+        debugError: `Gemini API Call Failed: ${errorMsg}`
+      });
     }
   }
 
@@ -87,7 +97,11 @@ Generate the next Interviewer response in character. Do not wrap in markdown or 
     const welcome = `Hello! Welcome to your Tata Consumer Products Limited (TCPL) Pre-Placement Interview. My name is Vikram Sen, and I am the Zonal Sales Head for TCPL West. Today we're evaluating you for the ${targetRole} position.
 
 To start off, please introduce yourself and tell me why you want to work with TCPL, specifically within our integrated Foods & Beverages division (covering tea, salt, spices, Capital Foods, and Organic India).`;
-    return res.status(200).json({ reply: welcome, isOffline: true });
+    return res.status(200).json({ 
+      reply: welcome, 
+      isOffline: true,
+      debugError: "GEMINI_API_KEY is undefined in process.env"
+    });
   }
 
   // Determine stage based on last interviewer question asked
@@ -108,7 +122,8 @@ To start off, please introduce yourself and tell me why you want to work with TC
       return res.status(200).json({ 
         reply: `Thank you for the greeting, but please share a brief introduction of yourself, your background, and why you'd like to work with TCPL so we can proceed with the interview.`,
         isOffline: true,
-        isWarning: true
+        isWarning: true,
+        debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
       });
     }
     
@@ -118,7 +133,11 @@ To start off, please introduce yourself and tell me why you want to work with TC
 Assume raw tea leaf crop inflation in Assam has increased our procurement costs by 18%. Our mass-market brand, Tata Tea Agni, is facing severe margin compression. We cannot easily raise the retail price point because our price-sensitive consumers will immediately shift to HUL's value brands or loose tea.
 
 As the Area Sales Manager (ASM) for the region, how would you protect our company's margins and the distributor's ROI under this crop inflation headwind? What variables would you tweak?`;
-    return res.status(200).json({ reply: q1, isOffline: true });
+    return res.status(200).json({ 
+      reply: q1, 
+      isOffline: true,
+      debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
+    });
   }
 
   // Stage 1: Crop Inflation -> Waiting for ASM Margin Solution
@@ -128,7 +147,8 @@ As the Area Sales Manager (ASM) for the region, how would you protect our compan
       return res.status(200).json({
         reply: `That response is a bit too brief or lacks S&D frameworks. As the Area Sales Manager, you need to propose concrete actions (like adjusting pack weights/grammage calibration, pushing premium brands, or refining trade schemes) to protect margins without losing volume. Please elaborate on your approach.`,
         isOffline: true,
-        isWarning: true
+        isWarning: true,
+        debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
       });
     }
 
@@ -138,7 +158,11 @@ As the Area Sales Manager (ASM) for the region, how would you protect our compan
 Let's discuss modern trade and quick commerce conflicts. Quick Commerce platforms (like Zepto and Blinkit) are scaling fast in urban metros and demanding a 20% margin to give top display slots to our premium Tata Sampann spices and Capital Foods products. At the same time, our traditional General Trade distributors are complaining that quick commerce is undercutting their retailer prices and stealing their wholesale volume.
 
 How would you handle this channel conflict as a Zonal Sales Head? Propose a structured coordination strategy.`;
-    return res.status(200).json({ reply: q2, isOffline: true });
+    return res.status(200).json({ 
+      reply: q2, 
+      isOffline: true,
+      debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
+    });
   }
 
   // Stage 2: Q-Commerce Conflict -> Waiting for Channel Strategy
@@ -148,7 +172,8 @@ How would you handle this channel conflict as a Zonal Sales Head? Propose a stru
       return res.status(200).json({
         reply: `Please address the channel conflict directly. How do you balance traditional GT distributors and modern quick-commerce dark stores? Consider partitioning assortments (SKU mapping) or altering wholesale pricing. What is your coordination strategy?`,
         isOffline: true,
-        isWarning: true
+        isWarning: true,
+        debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
       });
     }
 
@@ -161,7 +186,11 @@ They maintain 15 days of inventory (worth ₹5 Lakhs) in their warehouse and hav
 1) What is their monthly net margin in Rupees?
 2) What is their annual ROI %?
 3) How would you help them double their annual ROI without increasing their gross margin percentage?`;
-    return res.status(200).json({ reply: q3, isOffline: true });
+    return res.status(200).json({ 
+      reply: q3, 
+      isOffline: true,
+      debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
+    });
   }
 
   // Stage 3: S&D Math -> Waiting for calculations
@@ -171,7 +200,8 @@ They maintain 15 days of inventory (worth ₹5 Lakhs) in their warehouse and hav
       return res.status(200).json({
         reply: `Please attempt the calculations: 1) Monthly Net Margin, 2) Annual ROI %, and 3) How to double the ROI (e.g. by rotating capital/velocity). Even rough numbers will help me evaluate your quantitative analytical skills.`,
         isOffline: true,
-        isWarning: true
+        isWarning: true,
+        debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
       });
     }
 
@@ -191,10 +221,18 @@ This concludes our mock interview. Here is my evaluation of your performance:
 - **S&D Financial Math**: 9.0 / 10 (Accurate calculation of distributor ROI and working capital rotation velocity).
 
 Overall, you have demonstrated a strong readiness for a TCPL PPI. Study our brand portfolio synergies (Capital Foods integration) and keep practicing these numerical flows. All the best!`;
-    return res.status(200).json({ reply: feedback, isOffline: true });
+    return res.status(200).json({ 
+      reply: feedback, 
+      isOffline: true,
+      debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
+    });
   }
 
   // default fallback end
   const end = `Thank you again for participating in this TCPL PPI prep session. The mock interview is complete. If you would like to reset and practice again, click the 'Reset Interview' button!`;
-  return res.status(200).json({ reply: end, isOffline: true });
+  return res.status(200).json({ 
+    reply: end, 
+    isOffline: true,
+    debugError: !apiKey ? "GEMINI_API_KEY is undefined in process.env" : undefined
+  });
 }
