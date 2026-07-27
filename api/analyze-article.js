@@ -68,7 +68,7 @@ Only return valid JSON matching the structure. Do not return markdown wrap (like
           }
         });
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
         const request = https.request(url, {
           method: 'POST',
           headers: {

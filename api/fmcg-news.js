@@ -95,7 +95,7 @@ Ensure the metrics list has 2 to 4 items. Do not return any other text, markdown
       }
     });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
     const req = https.request(url, {
       method: 'POST',
       headers: {
