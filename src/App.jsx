@@ -52,6 +52,7 @@ export default function App() {
   // Voice recognition states
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   // S&D Math Calculator state
   const [salesVal, setSalesVal] = useState(1000000); // 10 Lakhs
@@ -246,8 +247,10 @@ export default function App() {
       });
       const data = await response.json();
       setChatMessages([{ role: 'assistant', content: data.reply }]);
+      setIsOfflineMode(!!data.isOffline);
     } catch (e) {
       setChatMessages([{ role: 'assistant', content: "Hello! Welcome to your Pre-Placement Interview. Let's start with your background and interest in joining our foods and beverages divisions." }]);
+      setIsOfflineMode(true);
     } finally {
       setIsChatLoading(false);
     }
@@ -280,6 +283,7 @@ export default function App() {
       });
       const data = await response.json();
       setChatMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      setIsOfflineMode(!!data.isOffline);
     } catch (err) {
       console.error(err);
       setChatMessages(prev => [...prev, { role: 'assistant', content: "I apologize, I lost connection to the interview server. Please try resetting the interview." }]);
@@ -966,6 +970,17 @@ export default function App() {
                     Reset Interview
                   </button>
                 </div>
+
+                {/* Offline Mode Warning Banner */}
+                {isOfflineMode && (
+                  <div className="p-4 bg-yellow-950/20 border border-yellow-800/40 rounded-xl text-xs text-yellow-400 flex items-start gap-3 shrink-0">
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Offline Structured Mode: </span>
+                      The simulator is running a pre-defined 5-stage case study (Assam tea leaf inflation, Q-Commerce conflicts, S&D ROI math check, and final scoring) because no Gemini API Key is configured on Vercel. Your inputs are evaluated for length and relevance at each stage before advancing.
+                    </div>
+                  </div>
+                )}
 
                 {/* Message display container */}
                 <div className="flex-1 min-h-0 bg-[#121724]/40 border border-gray-800 rounded-2xl p-6 overflow-y-auto space-y-4">
