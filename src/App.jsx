@@ -23,7 +23,8 @@ import {
   Send,
   Zap,
   ArrowRight,
-  Info
+  Info,
+  Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -47,6 +48,10 @@ export default function App() {
   const [userInput, setUserInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatEndRef = useRef(null);
+
+  // Voice recognition states
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
 
   // S&D Math Calculator state
   const [salesVal, setSalesVal] = useState(1000000); // 10 Lakhs
@@ -112,6 +117,48 @@ export default function App() {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages]);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-IN'; // Optimized for Indian English accent
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        setUserInput(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech Recognition Error:", event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please use Google Chrome or Safari.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setUserInput('');
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
 
   const fetchArticles = async (category = 'FMCG') => {
     setIsLoading(true);
@@ -209,6 +256,12 @@ export default function App() {
   const handleSendChatMessage = async (e) => {
     e.preventDefault();
     if (!userInput.trim() || isChatLoading) return;
+
+    // Automatically stop speech recognition if user submits
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
 
     const newMessages = [...chatMessages, { role: 'user', content: userInput }];
     setChatMessages(newMessages);
@@ -952,7 +1005,7 @@ export default function App() {
                 {/* Chat input box */}
                 <form 
                   onSubmit={handleSendChatMessage}
-                  className="flex gap-3 bg-[#0B0F19] p-3 rounded-2xl border border-gray-800 shrink-0"
+                  className="flex gap-3 bg-[#0B0F19] p-3 rounded-2xl border border-gray-800 shrink-0 items-center"
                 >
                   <input 
                     type="text" 
@@ -962,6 +1015,22 @@ export default function App() {
                     disabled={isChatLoading}
                     className="flex-1 bg-transparent px-3 text-xs focus:outline-none text-white disabled:opacity-50"
                   />
+                  
+                  {/* Microphone Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    disabled={isChatLoading}
+                    title={isListening ? "Listening... Click to stop" : "Speak your answer"}
+                    className={`p-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                      isListening
+                        ? 'bg-red-950/40 text-red-500 border border-red-900/50 animate-pulse'
+                        : 'text-gray-400 hover:text-white bg-gray-800/40 hover:bg-gray-800/60'
+                    }`}
+                  >
+                    <Mic className={`w-4 h-4 ${isListening ? 'scale-110' : ''}`} />
+                  </button>
+
                   <button 
                     type="submit"
                     disabled={isChatLoading || !userInput.trim()}
