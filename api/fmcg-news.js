@@ -172,47 +172,39 @@ export default async function handler(req, res) {
 
     let finalArticles = [];
 
-    if (apiKey) {
-      // 2. If API Key is present, enrich the live RSS headlines dynamically using Gemini
-      const enriched = await Promise.all(
-        topLiveArticles.map(art => enrichArticleWithGemini(art, category, apiKey))
-      );
-      finalArticles = [...enriched];
-    } else {
-      // 3. If no API Key, create clean static summaries/metrics for live RSS headlines,
-      // and merge with our high-quality hand-crafted mock DB articles matching this category
-      const basicLive = topLiveArticles.map((art, idx) => ({
-        id: `live_${idx}_${Date.now()}`,
-        ...art,
-        category: category,
-        summary: `Recent reporting on "${art.title}" from ${art.source}. (Connect a Gemini API Key to enable AI-generated deep analysis, S&D metrics, and prep questions).`,
-        metrics: [
-          { name: "Source Channel", value: art.source },
-          { name: "Release Date", value: art.date }
-        ]
-      }));
+    // We do NOT run Gemini enrichment on the list feed level to conserve API quota and avoid 429 rate limits.
+    // Instead, news feed shows clean RSS details, and the article is analyzed dynamically on demand when clicked.
+    const basicLive = topLiveArticles.map((art, idx) => ({
+      id: `live_${idx}_${Date.now()}`,
+      ...art,
+      category: category,
+      summary: `Recent reporting on "${art.title}" from ${art.source}. Click 'View Case Analysis' to generate a deep-dive PPI study guide.`,
+      metrics: [
+        { name: "Source Channel", value: art.source },
+        { name: "Release Date", value: art.date }
+      ]
+    }));
 
-      // Filter local mock articles to fit the requested category context
-      let categoryMockArticles = [...mockArticles];
-      if (category === 'TCPL') {
-        categoryMockArticles = mockArticles.filter(art => art.category === 'Tata Consumer Products');
-      } else if (category === 'FMCG') {
-        categoryMockArticles = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Retail');
-      } else if (category === 'Consumer') {
-        categoryMockArticles = mockArticles.filter(art => art.category === 'E-Commerce' || art.category === 'Retail');
-      } else if (category === 'Economy') {
-        categoryMockArticles = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Agri-Business');
-      }
-
-      // Force category tags of mock fallback to match requested tab for visual consistency
-      const normalizedMock = categoryMockArticles.map(art => ({
-        ...art,
-        category: category
-      }));
-
-      // Merge: Live RSS articles first, then our mock case studies
-      finalArticles = [...basicLive, ...normalizedMock];
+    // Filter local mock articles to fit the requested category context
+    let categoryMockArticles = [...mockArticles];
+    if (category === 'TCPL') {
+      categoryMockArticles = mockArticles.filter(art => art.category === 'Tata Consumer Products');
+    } else if (category === 'FMCG') {
+      categoryMockArticles = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Retail');
+    } else if (category === 'Consumer') {
+      categoryMockArticles = mockArticles.filter(art => art.category === 'E-Commerce' || art.category === 'Retail');
+    } else if (category === 'Economy') {
+      categoryMockArticles = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Agri-Business');
     }
+
+    // Force category tags of mock fallback to match requested tab for visual consistency
+    const normalizedMock = categoryMockArticles.map(art => ({
+      ...art,
+      category: category
+    }));
+
+    // Merge: Live RSS articles first, then our mock case studies
+    finalArticles = [...basicLive, ...normalizedMock];
 
     // Assign unique IDs to ensure no duplicates in React keys
     finalArticles = finalArticles.map((art, idx) => ({
