@@ -1545,7 +1545,9 @@ export default function App() {
                   </div>
                 </motion.div>
               )
-              {activeTab === 'deepdive' && (
+            )}
+
+            {activeTab === 'deepdive' && (
               userProfile && userProfile.company === 'HSBC' ? (
                 <motion.div 
                   key="deepdive-hsbc"
@@ -2150,10 +2152,6 @@ export default function App() {
                   </div>
                 </motion.div>
               )
-            )}        </div>
-                  </div>
-                </div>
-              </motion.div>
             )}
 
           </AnimatePresence>
