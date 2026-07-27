@@ -137,5 +137,71 @@ export const mockArticles = [
         answer: "FMCG brands must implement **Channel Segmentation**: 1) **Assortment Differentiation**: Sell mass-market, high-volume SKUs (small trial packs, standard ₹10 Salt/Tea/Spices) through GT to cater to daily wage and budget-conscious consumers. Sell premium, large-pack, and specialty SKUs (e.g., Tata Tea Gold Leaf, Tata Sampann organic cold-pressed oils, Capital Foods premium sauces, Organic India infusions) through Q-commerce. 2) **Pricing & Promotion**: Maintain price parity to avoid channel conflict, but bundle products on Q-commerce (e.g., 'Buy 2 Get 1' or custom recipe kits) to increase Average Order Value (AOV) and offset the platform's high commission rates. 3) **Supply Chain Speed**: Dedicate separate warehouse sections and transit lanes for Q-commerce to maintain 99%+ fill rates at dark stores, preventing stockouts that cause instant consumer switching."
       }
     ]
+  },
+  {
+    id: "mock_hsbc_1",
+    title: "HSBC India Corporate Portfolio Surges 16% in FY26, Led by Large Corporate Loans and Green Finance Syndications",
+    source: "Bloomberg Quint",
+    date: "May 18, 2026",
+    url: "https://www.bloomberg.com/news/articles/2026-05-18/hsbc-india-corporate-portfolio-surges-on-green-finance-syndications",
+    summary: "HSBC India reported a robust 16% growth in its corporate lending portfolio to ₹1.2 Lakh Crore for FY26, driven by corporate debt syndications, cross-border M&A advisory, and green energy financing. The bank managed several high-profile ESG debt issuances, cementing its leadership in corporate banking services.",
+    category: "HSBC",
+    metrics: [
+      { name: "Corporate Loan Book", value: "₹1.2 Lakh Cr (+16%)" },
+      { name: "Green Energy Loans", value: "₹15,000 Crore" },
+      { name: "HSBC India Net Profit", value: "₹6,400 Crore (+14%)" },
+      { name: "Capital Adequacy Ratio", value: "16.5% (Basel III)" }
+    ],
+    insights: [
+      "The growth was primarily fueled by demand for working capital loans and debt syndications in the renewable energy, infrastructure, and technology manufacturing sectors.",
+      "HSBC acted as the sole lead manager for three major cross-border acquisitions, leveraging its global treasury network to optimize currency hedging costs for Indian MNCs.",
+      "Credit risk provisions decreased by 12% YoY, reflecting strong balance sheets and corporate solvency ratios across major borrowing groups."
+    ],
+    forces: [
+      { force: "Competitive Rivalry", rating: "High", description: "Intense price competition on corporate interest spreads from private domestic giants like HDFC Bank and ICICI Bank, as well as state-owned SBI." },
+      { force: "Buyer Power", rating: "High", description: "Large blue-chip corporate clients hold substantial bargaining power, enabling them to negotiate finer credit terms and lower interest margins." },
+      { force: "Supplier Power", rating: "Medium", description: "Deposit franchise strength provides low-cost funding (CASA), though international wholesale debt markets are subject to global interest rate volatility." },
+      { force: "Threat of Substitutes", rating: "Medium", description: "Corporates can bypass traditional bank loans by issuing Commercial Paper or Corporate Bonds directly in the debt capital markets." },
+      { force: "Threat of New Entrants", rating: "Low", description: "Strict regulatory requirements, capital reserve adequacy guidelines (Basel III), and high infrastructure costs form massive entry barriers for new banking players." }
+    ],
+    questions: [
+      {
+        question: "How does HSBC evaluate corporate credit risk and structure security covenants when underwriting a large syndicated loan?",
+        answer: "HSBC's credit risk evaluation relies on a structured framework: 1) **Cash Flow Analysis**: Evaluating the DSCR (Debt Service Coverage Ratio) to ensure it remains comfortably above 1.5x under simulated stress scenarios. 2) **Leverage and Capital Adequacy**: Reviewing Debt-to-Equity and Debt-to-EBITDA multiples against industry benchmarks to avoid over-leveraging. 3) **Security Structuring**: Securing first charge on fixed assets, escrow controls over revenue collections, and personal/corporate guarantees. 4) **Market & FX Risks**: Assessing cash flow volatility against raw material price shocks, interest rate shifts, and foreign exchange exposure for cross-border players."
+      }
+    ]
+  },
+  {
+    id: "mock_hsbc_2",
+    title: "RBI Raises Loan Risk Weights: Banks Brace for Net Interest Margin Compression; Corporate WACCs Rise",
+    source: "Financial Express",
+    date: "June 05, 2026",
+    url: "https://www.financialexpress.com/industry/banking/rbi-raises-risk-weights-corporate-loans-wacc-impact-11234983.html",
+    summary: "The Reserve Bank of India raised risk weights on unsecured corporate loans by 25%, forcing commercial banks to allocate more capital. Finance experts predict this directive will compress banks' Net Interest Margins (NIM) by 20-30 bps and increase the Cost of Debt (Kd) for medium-sized corporate borrowers.",
+    category: "Banking",
+    metrics: [
+      { name: "Risk Weight Hike", value: "100% to 125% (+25%)" },
+      { name: "Projected NIM Impact", value: "-20 to -30 bps" },
+      { name: "Avg Cost of Debt (Kd)", value: "Increased by 50 bps" },
+      { name: "Industry WACC Impact", value: "Avg rise of 15-20 bps" }
+    ],
+    insights: [
+      "The RBI's tightening forces banks to maintain higher capital adequacy reserves, which naturally raises the minimum lending rates (MCLR) on corporate loans.",
+      "Investment-grade corporates are shifting their capital structuring towards equity issuances or foreign currency bonds to bypass domestic credit inflation.",
+      "The cost of syndicated debt rose, making debt advisory and structuring capability critical for relationship managers trying to preserve corporate client returns."
+    ],
+    forces: [
+      { force: "Competitive Rivalry", rating: "High", description: "Banks are aggressively competing for a smaller pool of high-quality corporate borrowers to protect credit quality, narrowing spreads." },
+      { force: "Buyer Power", rating: "Medium", description: "Medium-sized corporates have fewer credit substitutes and must accept the higher lending rates, while AAA-rated giants negotiate spreads." },
+      { force: "Supplier Power", rating: "High", description: "The central bank (RBI) holds complete regulatory power over banking capital rules, dictating reserve requirements." },
+      { force: "Threat of Substitutes", rating: "High", description: "Borrowers can access external commercial borrowings (ECBs) or issue local commercial paper to sidestep the domestic bank rate hike." },
+      { force: "Threat of New Entrants", rating: "Low", description: "New commercial bank entrants are virtually non-existent due to stringent RBI licensing norms and high initial capital deposits." }
+    ],
+    questions: [
+      {
+        question: "Explain the link between RBI's risk weight policies, a bank's cost of funds, and a corporate client's Weighted Average Cost of Capital (WACC).",
+        answer: "The relationship operates in a chain: 1) **Bank Capital Allocation**: RBI raising risk weights means banks must hold more capital (equity) against every rupee lent, increasing their capital costs. 2) **Lending Rates (Kd)**: To maintain their return on equity, banks pass this cost to borrowers by increasing corporate loan interest rates (Cost of Debt, Kd). 3) **WACC Increase**: A higher Kd directly increases the corporate borrower's WACC = (We * Ke) + [Wd * Kd * (1-T)]. 4) **Capital Budgeting Impact**: As WACC increases, the discount hurdle rate for new capital projects rises. This reduces the Net Present Value (NPV) of future cash flows, causing the company to defer marginal capital expenditures or restructure its capital by raising equity or accessing international debt capital markets."
+      }
+    ]
   }
 ];

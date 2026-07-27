@@ -54,6 +54,13 @@ export default function App() {
   const recognitionRef = useRef(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
+  // Corporate Finance WACC states
+  const [costEquity, setCostEquity] = useState(12); // 12%
+  const [costDebt, setCostDebt] = useState(8); // 8%
+  const [deRatio, setDeRatio] = useState(0.5); // 0.5 D/E
+  const [taxRate, setTaxRate] = useState(25); // 25%
+  const [entValue, setEntValue] = useState(100); // ₹100 Crore
+
   // S&D Math Calculator state
   const [salesVal, setSalesVal] = useState(1000000); // 10 Lakhs
   const [grossMargin, setGrossMargin] = useState(6); // 6%
@@ -75,7 +82,8 @@ export default function App() {
   // Fetch articles and reset interview when profile is loaded
   useEffect(() => {
     if (userProfile) {
-      fetchArticles(newsTab);
+      const defaultTab = userProfile.company === 'HSBC' ? 'Banking' : 'FMCG';
+      setNewsTab(defaultTab);
       resetInterview();
     }
   }, [userProfile]);
@@ -303,6 +311,14 @@ export default function App() {
       setLoginError('Email field is required');
       return;
     }
+    if (companyInput === 'TCPL' && roleInput === 'Fin') {
+      setLoginError('TCPL only supports Sales & Marketing (S&M) Prep. Please change your selection.');
+      return;
+    }
+    if (companyInput === 'HSBC' && roleInput === 'S&M') {
+      setLoginError('HSBC only supports Corporate Finance (Fin) Prep. Please change your selection.');
+      return;
+    }
     const profile = {
       name: nameInput.trim(),
       email: emailInput.trim(),
@@ -338,6 +354,13 @@ export default function App() {
   const annualROI = workingCapitalInvested > 0 
     ? ((annualNetProfit / workingCapitalInvested) * 100).toFixed(1) 
     : 0;
+
+  // Corporate Finance WACC Calculations
+  const weightEquity = 1 / (1 + deRatio);
+  const weightDebt = deRatio / (1 + deRatio);
+  const postTaxCostDebt = costDebt * (1 - taxRate / 100);
+  const waccVal = (weightEquity * costEquity) + (weightDebt * postTaxCostDebt);
+  const annualFinancingCost = entValue * (waccVal / 100); // In Crores
 
   // Filter lists for tabs
   const savedArticles = articles.filter(a => savedArticleIds.includes(a.id));
@@ -397,10 +420,16 @@ export default function App() {
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Target Company</label>
                 <select 
                   value={companyInput}
-                  onChange={(e) => setCompanyInput(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCompanyInput(val);
+                    if (val === 'TCPL') setRoleInput('S&M');
+                    else if (val === 'HSBC') setRoleInput('Fin');
+                  }}
                   className="w-full px-4 py-2.5 rounded-xl bg-[#121724] border border-gray-800 text-sm text-white focus:outline-none focus:border-red-500/50 transition-colors cursor-pointer"
                 >
                   <option value="TCPL">TCPL (Tata Consumer)</option>
+                  <option value="HSBC">HSBC (Finance Hub)</option>
                 </select>
               </div>
 
@@ -408,10 +437,16 @@ export default function App() {
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Target Role</label>
                 <select 
                   value={roleInput}
-                  onChange={(e) => setRoleInput(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRoleInput(val);
+                    if (val === 'S&M') setCompanyInput('TCPL');
+                    else if (val === 'Fin') setCompanyInput('HSBC');
+                  }}
                   className="w-full px-4 py-2.5 rounded-xl bg-[#121724] border border-gray-800 text-sm text-white focus:outline-none focus:border-red-500/50 transition-colors cursor-pointer"
                 >
                   <option value="S&M">S&M (Sales & Marketing)</option>
+                  <option value="Fin">Fin (Corporate Finance)</option>
                 </select>
               </div>
             </div>
@@ -441,10 +476,12 @@ export default function App() {
           {/* Brand header */}
           <div className="p-6 border-b border-gray-800 flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center font-extrabold text-white text-lg tracking-wider">
-              T
+              {userProfile.company === 'HSBC' ? 'H' : 'T'}
             </div>
             <div>
-              <h1 className="font-extrabold text-sm tracking-widest text-white uppercase">TCPL Prep</h1>
+              <h1 className="font-extrabold text-sm tracking-widest text-white uppercase">
+                {userProfile.company} Prep
+              </h1>
               <p className="text-[10px] text-gray-500 font-mono">PPI Portal v2.0</p>
             </div>
           </div>
@@ -499,7 +536,7 @@ export default function App() {
               }`}
             >
               <Calculator className="w-4 h-4" />
-              S&D Math Lab
+              {userProfile.role === 'Fin' ? 'Finance Valuation Lab' : 'S&D Math Lab'}
             </button>
 
             <button 
@@ -511,7 +548,7 @@ export default function App() {
               }`}
             >
               <Award className="w-4 h-4" />
-              TCPL Masterclass
+              {userProfile.company === 'HSBC' ? 'HSBC Masterclass' : 'TCPL Masterclass'}
             </button>
           </nav>
         </div>
@@ -546,14 +583,14 @@ export default function App() {
         <header className="p-6 bg-[#0B0F19]/60 backdrop-blur-md border-b border-gray-800/60 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-red-900/30 text-red-400 border border-red-800/50">
-              TCPL TARGET
+              {userProfile.company} TARGET
             </span>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-white hidden sm:block">
-              {activeTab === 'dashboard' && 'FMCG & Consumption Intelligence Hub'}
+              {activeTab === 'dashboard' && (userProfile.role === 'Fin' ? 'Banking & Markets Intelligence Hub' : 'FMCG & Consumption Intelligence Hub')}
               {activeTab === 'analysis' && 'Structured Case Analysis Deck'}
               {activeTab === 'interview' && 'Interactive Mock Interviewer'}
-              {activeTab === 'math' && 'Sales & Distribution Calculator'}
-              {activeTab === 'deepdive' && 'Tata Consumer Products Masterclass'}
+              {activeTab === 'math' && (userProfile.role === 'Fin' ? 'Corporate Finance Valuation Lab' : 'Sales & Distribution Calculator')}
+              {activeTab === 'deepdive' && (userProfile.company === 'HSBC' ? 'HSBC Corporate Banking Masterclass' : 'Tata Consumer Products Masterclass')}
             </h2>
           </div>
           
@@ -647,7 +684,10 @@ export default function App() {
                     
                     {/* Dynamic Precise Tabs */}
                     <div className="flex items-center gap-1.5 bg-[#0B0F19] p-1 rounded-xl border border-gray-800">
-                      {['FMCG', 'TCPL', 'Consumer', 'Economy'].map((tab) => (
+                      {(userProfile.company === 'HSBC' 
+                        ? ['Banking', 'HSBC', 'Markets', 'Economy'] 
+                        : ['FMCG', 'TCPL', 'Consumer', 'Economy']
+                      ).map((tab) => (
                         <button
                           key={tab}
                           onClick={() => setNewsTab(tab)}
@@ -1057,546 +1097,1060 @@ export default function App() {
               </motion.div>
             )}
 
-            {/* 4. S&D Math Tab */}
             {activeTab === 'math' && (
-              <motion.div 
-                key="math"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                {/* Math Lab Header */}
-                <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800">
-                  <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Coins className="w-5 h-5 text-red-500" />
-                    Distributor Return on Investment (ROI) Lab
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-2 leading-relaxed max-w-2xl">
-                    FMCG Area Sales Managers must defend distributor profitability. Use the sliders below to simulate a territory financial model and see how working capital velocity (inventory/credit days) drives the distributor's annual ROI.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  
-                  {/* Left Column: Form Sliders */}
-                  <div className="lg:col-span-1 space-y-6">
-                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-5">
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800/60 pb-2">
-                        Variables Controls
-                      </h4>
-                      
-                      {/* 1. Territory Sales */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400">Monthly Sales (Secondary)</span>
-                          <span className="font-bold text-white font-mono">₹{(salesVal/100000).toFixed(1)} Lakhs</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="100000" 
-                          max="5000000" 
-                          step="50000" 
-                          value={salesVal}
-                          onChange={(e) => setSalesVal(Number(e.target.value))}
-                          className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
-                        />
-                      </div>
-
-                      {/* 2. Gross Margin */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400">Distributor Gross Margin</span>
-                          <span className="font-bold text-white font-mono">{grossMargin}%</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="3" 
-                          max="12" 
-                          step="0.5" 
-                          value={grossMargin}
-                          onChange={(e) => setGrossMargin(Number(e.target.value))}
-                          className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
-                        />
-                        <p className="text-[9px] text-gray-500 leading-normal">Typically 5-6% for tea/staples; 8-10% for gourmet/sauces.</p>
-                      </div>
-
-                      {/* 3. Monthly OpEx */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400">Monthly OpEx (Vans, Salesmen)</span>
-                          <span className="font-bold text-white font-mono">₹{opexVal.toLocaleString()}</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="5000" 
-                          max="100000" 
-                          step="1000" 
-                          value={opexVal}
-                          onChange={(e) => setOpexVal(Number(e.target.value))}
-                          className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
-                        />
-                      </div>
-
-                      {/* 4. Stock Days */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400">Inventory Stock Days</span>
-                          <span className="font-bold text-white font-mono">{inventoryDays} Days</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="5" 
-                          max="45" 
-                          step="1" 
-                          value={inventoryDays}
-                          onChange={(e) => setInventoryDays(Number(e.target.value))}
-                          className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
-                        />
-                      </div>
-
-                      {/* 5. Retailer Credit Days */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400">Retailer Credit Days</span>
-                          <span className="font-bold text-white font-mono">{creditDays} Days</span>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="0" 
-                          max="45" 
-                          step="1" 
-                          value={creditDays}
-                          onChange={(e) => setCreditDays(Number(e.target.value))}
-                          className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
-                        />
-                      </div>
-
-                    </div>
+              userProfile && userProfile.role === 'Fin' ? (
+                <motion.div 
+                  key="math-fin"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  {/* Math Lab Header */}
+                  <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800">
+                    <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <Coins className="w-5 h-5 text-red-500" />
+                      Corporate Finance Weighted Average Cost of Capital (WACC) Lab
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-2 leading-relaxed max-w-2xl">
+                      Investment bankers and corporate finance managers must analyze a firm's capital structure. Use the controls below to adjust the cost of debt, cost of equity, leverage (D/E ratio), and tax rate to see the impact on WACC and annualized financing costs.
+                    </p>
                   </div>
 
-                  {/* Right Column: Output Financial Statement & ROI */}
-                  <div className="lg:col-span-2 space-y-6">
-                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 grid grid-cols-1 md:grid-cols-2 gap-6">
-                      
-                      {/* Profit Metrics */}
-                      <div className="space-y-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    {/* Left Column: Form Sliders */}
+                    <div className="lg:col-span-1 space-y-6">
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-5">
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800/60 pb-2">
-                          Monthly Profit & Loss
+                          WACC Parameters
                         </h4>
                         
+                        {/* 1. Cost of Equity */}
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-400">Monthly Gross Profit:</span>
-                            <span className="font-bold text-white font-mono">₹{monthlyGrossProfit.toLocaleString()}</span>
+                            <span className="text-gray-400">Cost of Equity (Ke)</span>
+                            <span className="font-bold text-white font-mono">{costEquity}%</span>
                           </div>
+                          <input 
+                            type="range" 
+                            min="5" 
+                            max="25" 
+                            step="0.5" 
+                            value={costEquity}
+                            onChange={(e) => setCostEquity(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                        </div>
+
+                        {/* 2. Cost of Debt */}
+                        <div className="space-y-2">
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-400">Monthly Operating Costs (OpEx):</span>
-                            <span className="font-bold text-red-400 font-mono">- ₹{opexVal.toLocaleString()}</span>
+                            <span className="text-gray-400">Cost of Debt (Kd)</span>
+                            <span className="font-bold text-white font-mono">{costDebt}%</span>
                           </div>
-                          <div className="flex justify-between text-xs border-t border-gray-850 pt-2 font-semibold">
-                            <span className="text-white">Monthly Net Profit:</span>
-                            <span className={`font-mono ${monthlyNetProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              ₹{monthlyNetProfit.toLocaleString()}
+                          <input 
+                            type="range" 
+                            min="3" 
+                            max="18" 
+                            step="0.5" 
+                            value={costDebt}
+                            onChange={(e) => setCostDebt(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                        </div>
+
+                        {/* 3. Debt to Equity Ratio */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Debt to Equity (D/E Ratio)</span>
+                            <span className="font-bold text-white font-mono">{deRatio.toFixed(2)}x</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0" 
+                            max="3" 
+                            step="0.05" 
+                            value={deRatio}
+                            onChange={(e) => setDeRatio(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                        </div>
+
+                        {/* 4. Tax Rate */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Corporate Tax Rate</span>
+                            <span className="font-bold text-white font-mono">{taxRate}%</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="15" 
+                            max="35" 
+                            step="1" 
+                            value={taxRate}
+                            onChange={(e) => setTaxRate(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                        </div>
+
+                        {/* 5. Enterprise Value */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Enterprise Value (EV)</span>
+                            <span className="font-bold text-white font-mono">₹{entValue} Cr</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="10" 
+                            max="1000" 
+                            step="10" 
+                            value={entValue}
+                            onChange={(e) => setEntValue(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                        </div>
+
+                      </div>
+                    </div>
+
+                    {/* Right Column: Output Capital Structure & WACC */}
+                    <div className="lg:col-span-2 space-y-6">
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        {/* Capital weights */}
+                        <div className="space-y-4">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800/60 pb-2">
+                            Capital Structure Weights
+                          </h4>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Weight of Equity (We):</span>
+                              <span className="font-bold text-white font-mono">{(weightEquity * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Weight of Debt (Wd):</span>
+                              <span className="font-bold text-white font-mono">{(weightDebt * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="flex justify-between text-xs border-t border-gray-850 pt-2 font-semibold">
+                              <span className="text-white">Post-Tax Cost of Debt:</span>
+                              <span className="font-mono text-green-400">
+                                {postTaxCostDebt.toFixed(2)}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs font-semibold pt-1">
+                              <span className="text-gray-400">Annualized Capital Cost:</span>
+                              <span className="text-white font-mono">₹{annualFinancingCost.toFixed(2)} Cr</span>
+                            </div>
+                          </div>
+
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800/60 pb-2 pt-4">
+                            Leverage Indicators
+                          </h4>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Equity Value Proportion:</span>
+                              <span className="font-bold text-white font-mono">₹{(entValue * weightEquity).toFixed(1)} Cr</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Debt Value Proportion:</span>
+                              <span className="font-bold text-white font-mono">₹{(entValue * weightDebt).toFixed(1)} Cr</span>
+                            </div>
+                            <div className="flex justify-between text-xs border-t border-gray-850 pt-2 font-bold">
+                              <span className="text-white">Total Enterprise Capital:</span>
+                              <span className="text-red-500 font-mono">₹{entValue} Cr</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* WACC Dashboard Panel */}
+                        <div className="bg-[#0B0F19] rounded-2xl border border-gray-800 p-6 flex flex-col justify-between items-center text-center">
+                          <div className="space-y-2">
+                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                              Weighted Average Cost of Capital (WACC)
+                            </h4>
+                            <p className="text-xs text-gray-400">Formula: (We × Ke) + [Wd × Kd × (1 - T)]</p>
+                          </div>
+
+                          <div className="my-6">
+                            <div className="text-4xl md:text-5xl font-black font-mono text-red-500 tracking-tight">
+                              {waccVal.toFixed(2)}%
+                            </div>
+                            <span className={`inline-block mt-2 px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${
+                              waccVal <= 9
+                                ? 'bg-green-950/40 text-green-400 border-green-900/30'
+                                : waccVal <= 13
+                                  ? 'bg-yellow-950/40 text-yellow-400 border-yellow-900/30'
+                                  : 'bg-red-950/40 text-red-400 border-red-900/30'
+                            }`}>
+                              {waccVal <= 9 ? 'Optimal Capital Structure' : waccVal <= 13 ? 'Moderate Capital Cost' : 'High Financial Cost'}
                             </span>
                           </div>
-                          <div className="flex justify-between text-xs font-semibold pt-1">
-                            <span className="text-gray-400">Annualized Net Profit:</span>
-                            <span className="text-white font-mono">₹{annualNetProfit.toLocaleString()}</span>
+
+                          <div className="w-full text-[10px] text-gray-500 text-center leading-normal font-mono border-t border-gray-850 pt-4">
+                            Lowering WACC increases firm valuation (NPV) and creates corporate financial headroom.
                           </div>
                         </div>
+                      </div>
 
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800/60 pb-2 pt-4">
-                          Working Capital Invested
+                      {/* Corporate Finance Jargon */}
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-widest font-mono">
+                          WACC Evaluation Parameters
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                          <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                            <span className="font-bold text-red-500 block mb-1">Cost of Equity (Ke)</span>
+                            <p className="text-gray-400 text-[11px] leading-relaxed font-sans font-sans">The return expected by equity shareholders. Often calculated using CAPM: Ke = Rf + β(Rm - Rf).</p>
+                          </div>
+                          <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                            <span className="font-bold text-red-500 block mb-1">Interest Tax Shield</span>
+                            <p className="text-gray-400 text-[11px] leading-relaxed font-sans font-sans">Interest on debt is tax-deductible, reducing the effective cost of debt to: Kd × (1 - T).</p>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="math"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  {/* Math Lab Header */}
+                  <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800">
+                    <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <Coins className="w-5 h-5 text-red-500" />
+                      Distributor Return on Investment (ROI) Lab
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-2 leading-relaxed max-w-2xl">
+                      FMCG Area Sales Managers must defend distributor profitability. Use the sliders below to simulate a territory financial model and see how working capital velocity (inventory/credit days) drives the distributor's annual ROI.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    {/* Left Column: Form Sliders */}
+                    <div className="lg:col-span-1 space-y-6">
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-5">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800/60 pb-2">
+                          Variables Controls
                         </h4>
                         
+                        {/* 1. Territory Sales */}
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-400">Warehouse Inventory Value:</span>
-                            <span className="font-bold text-white font-mono">₹{Math.round(inventoryValue).toLocaleString()}</span>
+                            <span className="text-gray-400">Monthly Sales (Secondary)</span>
+                            <span className="font-bold text-white font-mono">₹{(salesVal/100000).toFixed(1)} Lakhs</span>
                           </div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-gray-400">Outstanding Retailer Debtors:</span>
-                            <span className="font-bold text-white font-mono">₹{Math.round(creditValue).toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between text-xs border-t border-gray-850 pt-2 font-bold">
-                            <span className="text-white">Total Capital Locked:</span>
-                            <span className="text-red-500 font-mono">₹{Math.round(workingCapitalInvested).toLocaleString()}</span>
-                          </div>
+                          <input 
+                            type="range" 
+                            min="100000" 
+                            max="5000000" 
+                            step="50000" 
+                            value={salesVal}
+                            onChange={(e) => setSalesVal(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
                         </div>
-                      </div>
 
-                      {/* ROI Dashboard Panel */}
-                      <div className="bg-[#0B0F19] rounded-2xl border border-gray-800 p-6 flex flex-col justify-between items-center text-center">
+                        {/* 2. Gross Margin */}
                         <div className="space-y-2">
-                          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                            Annualized Return On Investment
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Distributor Gross Margin</span>
+                            <span className="font-bold text-white font-mono">{grossMargin}%</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="3" 
+                            max="12" 
+                            step="0.5" 
+                            value={grossMargin}
+                            onChange={(e) => setGrossMargin(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                          <p className="text-[9px] text-gray-500 leading-normal">Typically 5-6% for tea/staples; 8-10% for gourmet/sauces.</p>
+                        </div>
+
+                        {/* 3. Monthly OpEx */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Monthly OpEx (Vans, Salesmen)</span>
+                            <span className="font-bold text-white font-mono">₹{opexVal.toLocaleString()}</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="5000" 
+                            max="100000" 
+                            step="1000" 
+                            value={opexVal}
+                            onChange={(e) => setOpexVal(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                        </div>
+
+                        {/* 4. Stock Days */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Inventory Stock Days</span>
+                            <span className="font-bold text-white font-mono">{inventoryDays} Days</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="5" 
+                            max="45" 
+                            step="1" 
+                            value={inventoryDays}
+                            onChange={(e) => setInventoryDays(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                        </div>
+
+                        {/* 5. Retailer Credit Days */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Retailer Credit Days</span>
+                            <span className="font-bold text-white font-mono">{creditDays} Days</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0" 
+                            max="45" 
+                            step="1" 
+                            value={creditDays}
+                            onChange={(e) => setCreditDays(Number(e.target.value))}
+                            className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+                          />
+                        </div>
+
+                      </div>
+                    </div>
+
+                    {/* Right Column: Output Financial Statement & ROI */}
+                    <div className="lg:col-span-2 space-y-6">
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        {/* Profit Metrics */}
+                        <div className="space-y-4">
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800/60 pb-2">
+                            Monthly Profit & Loss
                           </h4>
-                          <p className="text-xs text-gray-400">Formula: (Annual Net Profit / Capital Locked) × 100</p>
-                        </div>
-
-                        <div className="my-6">
-                          <div className="text-4xl md:text-5xl font-black font-mono text-red-500 tracking-tight">
-                            {annualROI}%
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Monthly Gross Profit:</span>
+                              <span className="font-bold text-white font-mono">₹{monthlyGrossProfit.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Monthly Operating Costs (OpEx):</span>
+                              <span className="font-bold text-red-400 font-mono">- ₹{opexVal.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-xs border-t border-gray-850 pt-2 font-semibold">
+                              <span className="text-white">Monthly Net Profit:</span>
+                              <span className={`font-mono ${monthlyNetProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                ₹{monthlyNetProfit.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs font-semibold pt-1">
+                              <span className="text-gray-400">Annualized Net Profit:</span>
+                              <span className="text-white font-mono">₹{annualNetProfit.toLocaleString()}</span>
+                            </div>
                           </div>
-                          <span className={`inline-block mt-2 px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${
-                            annualROI >= 24
-                              ? 'bg-green-950/40 text-green-400 border-green-900/30'
-                              : annualROI >= 15
-                                ? 'bg-yellow-950/40 text-yellow-400 border-yellow-900/30'
-                                : 'bg-red-950/40 text-red-400 border-red-900/30'
-                          }`}>
-                            {annualROI >= 24 ? 'Highly Lucrative' : annualROI >= 15 ? 'Sustainable' : 'Critical ROI Deficit'}
-                          </span>
+
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800/60 pb-2 pt-4">
+                            Working Capital Invested
+                          </h4>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Warehouse Inventory Value:</span>
+                              <span className="font-bold text-white font-mono">₹{Math.round(inventoryValue).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-400">Outstanding Retailer Debtors:</span>
+                              <span className="font-bold text-white font-mono">₹{Math.round(creditValue).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-xs border-t border-gray-850 pt-2 font-bold">
+                              <span className="text-white">Total Capital Locked:</span>
+                              <span className="text-red-500 font-mono">₹{Math.round(workingCapitalInvested).toLocaleString()}</span>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="text-[10px] text-gray-400 leading-relaxed font-sans max-w-[220px]">
-                          <Info className="w-3.5 h-3.5 text-red-500 inline mr-1 mb-0.5" />
-                          <span className="font-bold text-white">ASM Takeaway:</span> Reducing credit/stock days speeds up rotation velocity, allowing the distributor to earn the same profit with less capital locked up, skyrocketing ROI.
+                        {/* ROI Dashboard Panel */}
+                        <div className="bg-[#0B0F19] rounded-2xl border border-gray-800 p-6 flex flex-col justify-between items-center text-center">
+                          <div className="space-y-2">
+                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                              Annualized Return On Investment
+                            </h4>
+                            <p className="text-xs text-gray-400">Formula: (Annual Net Profit / Capital Locked) × 100</p>
+                          </div>
+
+                          <div className="my-6">
+                            <div className="text-4xl md:text-5xl font-black font-mono text-red-500 tracking-tight">
+                              {annualROI}%
+                            </div>
+                            <span className={`inline-block mt-2 px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${
+                              annualROI >= 24
+                                ? 'bg-green-950/40 text-green-400 border-green-900/30'
+                                : annualROI >= 15
+                                  ? 'bg-yellow-950/40 text-yellow-400 border-yellow-900/30'
+                                  : 'bg-red-950/40 text-red-400 border-red-900/30'
+                            }`}>
+                              {annualROI >= 24 ? 'Highly Lucrative' : annualROI >= 15 ? 'Sustainable' : 'Critical ROI Deficit'}
+                            </span>
+                          </div>
+
+                          <div className="text-[10px] text-gray-400 leading-relaxed font-sans max-w-[220px]">
+                            <Info className="w-3.5 h-3.5 text-red-500 inline mr-1 mb-0.5" />
+                            <span className="font-bold text-white">ASM Takeaway:</span> Reducing credit/stock days speeds up rotation velocity, allowing the distributor to earn the same profit with less capital locked up, skyrocketing ROI.
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step-by-Step Explanation Accordion */}
+                      <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                        <h4 className="text-xs font-bold text-white uppercase tracking-widest font-mono">
+                          Distributor Financial Equations Sheet
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                          <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                            <p className="font-bold text-red-400 mb-1">1. Capital Locked</p>
+                            <p className="text-gray-400 leading-normal">
+                              Inventory + Debtors. Reducing warehouse holding days or shortening retailer credit terms instantly frees up distributor capital.
+                            </p>
+                          </div>
+                          <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                            <p className="font-bold text-red-400 mb-1">2. Rotation Velocity</p>
+                            <p className="text-gray-400 leading-normal">
+                              If sales are ₹10L and stock days is 15, stock rotates 2x a month. Rotating 4x a month halves capital requirements.
+                            </p>
+                          </div>
+                          <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                            <p className="font-bold text-red-400 mb-1">3. Net Margin defense</p>
+                            <p className="text-gray-400 leading-normal">
+                              During inflation, prioritize high-margin premium coffee/spices in the sales mix to offset static margins on salt.
+                            </p>
+                          </div>
                         </div>
                       </div>
 
                     </div>
-
-                    {/* Step-by-Step Explanation Accordion */}
-                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                      <h4 className="text-xs font-bold text-white uppercase tracking-widest font-mono">
-                        Distributor Financial Equations Sheet
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
-                          <p className="font-bold text-red-400 mb-1">1. Capital Locked</p>
-                          <p className="text-gray-400 leading-normal">
-                            Inventory + Debtors. Reducing warehouse holding days or shortening retailer credit terms instantly frees up distributor capital.
-                          </p>
-                        </div>
-                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
-                          <p className="font-bold text-red-400 mb-1">2. Rotation Velocity</p>
-                          <p className="text-gray-400 leading-normal">
-                            If sales are ₹10L and stock days is 15, stock rotates 2x a month. Rotating 4x a month halves capital requirements.
-                          </p>
-                        </div>
-                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
-                          <p className="font-bold text-red-400 mb-1">3. Net Margin defense</p>
-                          <p className="text-gray-400 leading-normal">
-                            During inflation, prioritize high-margin premium coffee/spices in the sales mix to offset static margins on salt.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
                   </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* 5. TCPL Deep Dive Tab */}
-            {activeTab === 'deepdive' && (
-              <motion.div 
-                key="deepdive"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                {/* Masterclass Header */}
-                <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800 relative overflow-hidden">
-                  <div className="absolute right-0 top-0 w-48 h-48 bg-red-600/10 rounded-full blur-3xl"></div>
-                  <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Award className="w-5 h-5 text-red-500" />
-                    Tata Consumer Products Limited (TCPL) Corporate Intelligence Deck
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-2 leading-relaxed max-w-3xl">
-                    A comprehensive technical repository summarizing TCPL's corporate identity, strategic growth pillars, leadership team, brand matrix, and physical distribution hierarchy. 
-                  </p>
-                </div>
-
-                {/* 1. Vision, Mission & Values Block */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  
-                  {/* Vision Card */}
-                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
-                    <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
-                      <span>👁️</span> Core Vision
-                    </h4>
-                    <p className="text-sm font-extrabold text-white leading-snug">
-                      "To build better lives and thriving communities."
+                </motion.div>
+              )
+              {activeTab === 'deepdive' && (
+              userProfile && userProfile.company === 'HSBC' ? (
+                <motion.div 
+                  key="deepdive-hsbc"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  {/* Masterclass Header */}
+                  <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800 relative overflow-hidden">
+                    <div className="absolute right-0 top-0 w-48 h-48 bg-red-600/10 rounded-full blur-3xl"></div>
+                    <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <Award className="w-5 h-5 text-red-500" />
+                      HSBC Corporate Banking & Global Finance Intelligence Deck
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-2 leading-relaxed max-w-3xl">
+                      A comprehensive technical repository summarizing HSBC India's corporate identity, strategic growth pillars, leadership team, business portfolio, and relationship manager hierarchy.
                     </p>
-                    <p className="text-xs text-gray-400 leading-relaxed pt-1">
-                      Roots TCPL's commercial operations back to the core Tata Group philosophy of community enrichment, shared trust, and long-term societal value.
-                    </p>
                   </div>
 
-                  {/* Mission Card */}
-                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
-                    <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
-                      <span>🚀</span> Company Mission
-                    </h4>
-                    <p className="text-sm font-extrabold text-white leading-snug">
-                      "To keep passionately growing and innovating every day."
-                    </p>
-                    <p className="text-xs text-gray-400 leading-relaxed pt-1">
-                      Drives the aggressive transformation from a traditional plantation/bulk commodity business (Tata Tea/Tata Coffee) to a fast-moving, high-margin consumer staples and products giant.
-                    </p>
-                  </div>
-
-                  {/* Core Values Card */}
-                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
-                    <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
-                      <span>🛡️</span> Five Core Values
-                    </h4>
-                    <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-white font-mono">
-                      <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">🤝 EMPATHY</div>
-                      <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">⚖️ INTEGRITY</div>
-                      <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">⚡ AGILITY</div>
-                      <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">🏆 EXCELLENCE</div>
-                      <div className="bg-[#0B0F19] col-span-2 px-2.5 py-1.5 rounded border border-gray-800 text-center">🎯 OWNERSHIP</div>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* 2. Leadership and Governance Panel */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
-                  {/* Executive Management */}
-                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
-                      <Info className="w-4 h-4 text-red-500" />
-                      Executive Leadership Team
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-white uppercase tracking-wider">Sunil D'Souza</p>
-                          <p className="text-[10px] text-gray-500 font-mono mt-0.5">Managing Director & Chief Executive Officer (MD & CEO)</p>
-                        </div>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30">Head</span>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-white uppercase tracking-wider">Ajit Krishnakumar</p>
-                          <p className="text-[10px] text-gray-500 font-mono mt-0.5">Executive Director & Chief Operating Officer (ED & COO)</p>
-                        </div>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-850">Operations</span>
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
-                        <div>
-                          <p className="text-xs font-extrabold text-white uppercase tracking-wider">Ashish Goenka</p>
-                          <p className="text-[10px] text-gray-500 font-mono mt-0.5">Group Chief Financial Officer (CFO)</p>
-                        </div>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-850">Finance</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Board of Directors */}
-                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
-                      <Info className="w-4 h-4 text-red-500" />
-                      Board of Directors
-                    </h4>
-                    <div className="space-y-3 text-xs">
-                      <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850">
-                        <p className="text-xs font-extrabold text-white uppercase tracking-wider">Mr. N. Chandrasekaran</p>
-                        <p className="text-[10px] text-gray-500 font-mono mt-0.5">Chairman (Non-Executive Director) • Also Chairman of Tata Sons</p>
-                      </div>
-                      
-                      <div>
-                        <span className="font-bold text-white text-[10px] uppercase tracking-wider block mb-1">Key Independent Directors</span>
-                        <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400 font-mono">
-                          <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">👨‍⚖️ Dr. K. P. Krishnan</div>
-                          <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">🛒 Mr. Bharat Puri</div>
-                          <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">💼 Ms. Shikha Sharma</div>
-                          <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">🔬 Mr. David Crean</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* 3. Strategic Framework (6 Pillars) & Sustainability */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  
-                  {/* The Six Strategic Pillars */}
-                  <div className="md:col-span-2 p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-yellow-500" />
-                      The Six Growth Pillars ("How We Win")
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
-                        <p className="font-bold text-white mb-1">1. Strengthen Core & Scale Growth</p>
-                        <p className="text-gray-400 text-[11px] leading-relaxed">Protect tea/salt market share while aggressively scaling high-growth businesses (Tata Sampann, Tata Coffee).</p>
-                      </div>
-                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
-                        <p className="font-bold text-white mb-1">2. Build on New Opportunities</p>
-                        <p className="text-gray-400 text-[11px] leading-relaxed">Expand portfolio organically and inorganically (acquisitions of Capital Foods and Organic India) to target premium segments.</p>
-                      </div>
-                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
-                        <p className="font-bold text-white mb-1">3. Drive Execution Excellence</p>
-                        <p className="text-gray-400 text-[11px] leading-relaxed">Focus on premiumization, cost optimization, expanding rural coverage, and optimizing distributor fill rates.</p>
-                      </div>
-                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
-                        <p className="font-bold text-white mb-1">4. Digital & Innovation Acceleration</p>
-                        <p className="text-gray-400 text-[11px] leading-relaxed">Use SFA (Sales Force Automation) systems, digital supply chain tracking, and launching digital-first premium offerings.</p>
-                      </div>
-                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
-                        <p className="font-bold text-white mb-1">5. Future-Ready Organization</p>
-                        <p className="text-gray-400 text-[11px] leading-relaxed">Build strong cross-functional sales/marketing capabilities and integrate post-merger operations.</p>
-                      </div>
-                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
-                        <p className="font-bold text-white mb-1">6. Embed Sustainability</p>
-                        <p className="text-gray-400 text-[11px] leading-relaxed">Integrate environmental responsibility and social impact across sourcing, packaging, and community relations.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sustainability Commitment */}
-                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
-                      <ShieldAlert className="w-4 h-4 text-green-500" />
-                      #ForBetter Sustainability Focus
-                    </h4>
-                    <div className="space-y-3 text-xs text-gray-400">
-                      <div className="pb-2 border-b border-gray-850">
-                        <span className="font-bold text-white block">For Better Sourcing</span>
-                        <p className="text-[11px] mt-0.5">100% sustainable agricultural raw materials, supporting tea and coffee growers.</p>
-                      </div>
-                      <div className="pb-2 border-b border-gray-850">
-                        <span className="font-bold text-white block">For a Better Planet</span>
-                        <p className="text-[11px] mt-0.5">Zero-waste to landfills, water-neutral manufacturing, and circular packaging transitions.</p>
-                      </div>
-                      <div className="pb-2 border-b border-gray-850">
-                        <span className="font-bold text-white block">For Better Communities</span>
-                        <p className="text-[11px] mt-0.5">Empowering small tea growers, providing clean water access, and community healthcare.</p>
-                      </div>
-                      <div>
-                        <span className="font-bold text-white block">For Better Nutrition</span>
-                        <p className="text-[11px] mt-0.5">Tata Sampann unpolished staples and Organic India health products delivering clean food.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* 4. Brand Matrix & Sales Hierarchy Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
-                  {/* House of Brands */}
-                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-800/60 pb-2">
-                      <GitMerge className="w-4 h-4 text-red-500" />
-                      Integrated Brand Portfolio
-                    </h4>
+                  {/* 1. Vision, Purpose & Values Block */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     
-                    <div className="space-y-3 text-xs">
-                      <div>
-                        <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Beverages Division</span>
-                        <p className="text-gray-400 leading-normal mt-0.5">
-                          Tata Tea (Agni, Premium, Gold, Chakra Gold), Tetley (green/infusion teas), Tata Coffee (Grand, premium beans), Starbucks JV (Tata Starbucks India).
-                        </p>
-                      </div>
+                    {/* Vision Card */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                      <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                        <span>👁️</span> Core Purpose
+                      </h4>
+                      <p className="text-sm font-extrabold text-white leading-snug">
+                        "Opening up a world of opportunity."
+                      </p>
+                      <p className="text-xs text-gray-400 leading-relaxed pt-1">
+                        Defines HSBC's role in connecting corporate clients to global growth channels, cross-border trade pipelines, and international liquidity centers.
+                      </p>
+                    </div>
 
-                      <div>
-                        <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Foods & Staples Division</span>
-                        <p className="text-gray-400 leading-normal mt-0.5">
-                          Tata Salt (Lite, SuperLite, Rock Salt), Tata Sampann (pulses, spices, dry fruits, unpolished rice, ready-to-cook mixes).
-                        </p>
-                      </div>
+                    {/* Mission Card */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                      <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                        <span>🚀</span> Strategic Ambition
+                      </h4>
+                      <p className="text-sm font-extrabold text-white leading-snug">
+                        "To be the world’s leading international corporate bank."
+                      </p>
+                      <p className="text-xs text-gray-400 leading-relaxed pt-1">
+                        Drives focus on facilitating large transaction flows, ESG financing transitions, and building technology-led treasury integrations for corporate borrowers.
+                      </p>
+                    </div>
 
-                      <div>
-                        <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Acquisitions & Growth Vehicles</span>
-                        <p className="text-gray-400 leading-normal mt-0.5">
-                          <span className="font-bold text-white">Capital Foods:</span> Ching's Secret (condiments, instant Chinese noodles) and Smith & Jones (pastes, ginger garlic, aids). 
-                          <span className="font-bold text-white block mt-0.5">Organic India:</span> Organic herbal tea infusions, wellness capsules, and healthy groceries.
-                        </p>
+                    {/* Core Values Card */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                      <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                        <span>🛡️</span> Five Core Values
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-white font-mono">
+                        <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">🤝 RESPECT</div>
+                        <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">⚖️ INTEGRITY</div>
+                        <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">⚡ COLLABORATION</div>
+                        <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">🏆 EXCELLENCE</div>
+                        <div className="bg-[#0B0F19] col-span-2 px-2.5 py-1.5 rounded border border-gray-800 text-center">🎯 MERITOCRACY</div>
                       </div>
                     </div>
+
                   </div>
 
-                  {/* GTM Sales Hierarchy */}
-                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-800/60 pb-2">
-                      <Layers className="w-4 h-4 text-red-500" />
-                      Traditional General Trade Sales Hierarchy
-                    </h4>
+                  {/* 2. Leadership and Governance Panel */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* Executive Management */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-red-500" />
+                        HSBC India Leadership Team
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                          <div>
+                            <p className="text-xs font-extrabold text-white uppercase tracking-wider">Hitendra Dave</p>
+                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">Chief Executive Officer (CEO), HSBC India</p>
+                          </div>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30">Head</span>
+                        </div>
 
-                    <div className="space-y-3 text-xs">
-                      <div className="relative pl-6 border-l border-red-500/20 space-y-3">
-                        <div className="absolute -left-1.5 top-0.5 w-3 h-3 rounded-full bg-red-600"></div>
+                        <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                          <div>
+                            <p className="text-xs font-extrabold text-white uppercase tracking-wider">Pradeep Kumar</p>
+                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">Managing Director & Head of Global Banking (India)</p>
+                          </div>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-850">Corporate</span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                          <div>
+                            <p className="text-xs font-extrabold text-white uppercase tracking-wider">Sujatha Rangarajan</p>
+                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">Chief Risk Officer (CRO), India</p>
+                          </div>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-850">Risk</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Board and APAC Leadership */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-red-500" />
+                        APAC & Group Overseers
+                      </h4>
+                      <div className="space-y-3 text-xs">
+                        <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850">
+                          <p className="text-xs font-extrabold text-white uppercase tracking-wider">Surendra Rosha</p>
+                          <p className="text-[10px] text-gray-500 font-mono mt-0.5">Co-CEO of HSBC Asia-Pacific • Direct oversight of Indian market operations</p>
+                        </div>
+                        
                         <div>
-                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">1. National Sales Manager (NSM)</span>
-                          <p className="text-[10px] text-gray-500 font-mono">Macro Channel Strategy & National Revenue</p>
-                        </div>
-
-                        <div className="absolute -left-1.5 top-[52px] w-3 h-3 rounded-full bg-red-600/70"></div>
-                        <div className="pt-2">
-                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">2. Regional Sales Manager (RSM)</span>
-                          <p className="text-[10px] text-gray-500 font-mono">Zonal Head (Zonal profit & loss, C&F Agent efficiency)</p>
-                        </div>
-
-                        <div className="absolute -left-1.5 top-[108px] w-3 h-3 rounded-full bg-red-600/50"></div>
-                        <div className="pt-2">
-                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">3. Area Sales Manager (ASM)</span>
-                          <p className="text-[10px] text-gray-500 font-mono">District/State cluster control (Primary target, distributor ROI)</p>
-                        </div>
-
-                        <div className="absolute -left-1.5 top-[164px] w-3 h-3 rounded-full bg-red-600/30"></div>
-                        <div className="pt-2">
-                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">4. Territory Sales Executive (TSE) / SO</span>
-                          <p className="text-[10px] text-gray-500 font-mono">Secondary sales target, distributor liquidity, beat planning</p>
-                        </div>
-
-                        <div className="absolute -left-1.5 top-[220px] w-3 h-3 rounded-full bg-red-600/20"></div>
-                        <div className="pt-2">
-                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">5. Distributor Sales Representative (DSR)</span>
-                          <p className="text-[10px] text-gray-500 font-mono">Frontline beat walker (Daily strike rate, LPC, LPB)</p>
+                          <span className="font-bold text-white text-[10px] uppercase tracking-wider block mb-1">Key Business Divisions</span>
+                          <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400 font-mono">
+                            <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">🏦 Global Banking (GB)</div>
+                            <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">💼 Commercial Banking (CMB)</div>
+                            <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">📈 Global Markets (GM)</div>
+                            <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">🌐 Wealth & Personal (WPB)</div>
+                          </div>
                         </div>
                       </div>
                     </div>
+
                   </div>
 
-                </div>
+                  {/* 3. Strategic Framework & Sustainability */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    {/* The Growth Pillars */}
+                    <div className="md:col-span-2 p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-yellow-500" />
+                        Growth Pillars ("How We Win")
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">1. Leverage Global Network</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed font-sans">Connecting Indian corporate entities to international debt capital markets, global trade corridors, and foreign investors.</p>
+                        </div>
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">2. Expand Transaction Banking</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed font-sans">Prioritizing liquidity management, trade finance, and automated digital treasury integrations for corporate borrowers.</p>
+                        </div>
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">3. Drive Green Finance Transitions</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed font-sans">Issuing green bonds, solar syndications, and sustainability-linked term loans to support corporate carbon-neutral targets.</p>
+                        </div>
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">4. Accelerate Digital API Banking</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed font-sans">Enabling real-time payment reconciliation, automated trade reporting, and blockchain-based letters of credit.</p>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* S&D Jargon Cheat Sheet */}
-                <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
-                  <h4 className="text-xs font-bold text-white uppercase tracking-widest font-mono">
-                    Essential S&D Terminologies for the PPI Room
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-                    <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
-                      <p className="font-bold text-red-500 mb-1">Primary vs Secondary</p>
-                      <p className="text-gray-400 leading-normal font-sans">
-                        <span className="font-bold text-white">Primary:</span> Company to Distributor. 
-                        <span className="font-bold text-white block">Secondary:</span> Distributor to Retailer (Kirana). ASMs track secondary as it represents real market demand.
+                    {/* ESG Focus */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-green-500" />
+                        ESG Corporate Transition Commitments
+                      </h4>
+                      <div className="space-y-3 text-xs text-gray-400">
+                        <div className="pb-2 border-b border-gray-850">
+                          <span className="font-bold text-white block">Sustainable Finance</span>
+                          <p className="text-[11px] mt-0.5">Commitment to facilitate up to $1 Trillion in sustainable finance and investments globally by 2030.</p>
+                        </div>
+                        <div className="pb-2 border-b border-gray-850">
+                          <span className="font-bold text-white block">Green Term Loans</span>
+                          <p className="text-[11px] mt-0.5">Customized lending metrics linking interest rate spreads directly to the borrower's carbon reduction KPIs.</p>
+                        </div>
+                        <div className="pb-2 border-b border-gray-850">
+                          <span className="font-bold text-white block">Net-Zero Operations</span>
+                          <p className="text-[11px] mt-0.5">Reducing carbon footprint across supply chains, data operations, and building infrastructure.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* 4. Business Portfolios & Corporate Sales Hierarchy Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* GB Portfolio */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-800/60 pb-2">
+                        <GitMerge className="w-4 h-4 text-red-500" />
+                        Global Banking Product Portfolios
+                      </h4>
+                      
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Corporate Lending & Syndications</span>
+                          <p className="text-gray-400 leading-normal mt-0.5">
+                            Bilateral term loans, working capital facilities, consortium syndications, external commercial borrowings (ECB), and bridge financing.
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Advisory & Capital Markets</span>
+                          <p className="text-gray-400 leading-normal mt-0.5">
+                            M&A advisory, Equity Capital Markets (IPO, Qualified Institutional Placements), and Debt Capital Markets (Local/Foreign bond underwriting).
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Global Transaction Banking</span>
+                          <p className="text-gray-400 leading-normal mt-0.5">
+                            Receivables financing, structured trade loans, letters of credit (LC), bank guarantees (BG), cash management services, and treasury pooling.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Banking Sales Hierarchy */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-800/60 pb-2">
+                        <Layers className="w-4 h-4 text-red-500" />
+                        Global Banking & Corporate Relationship Hierarchy
+                      </h4>
+
+                      <div className="space-y-3 text-xs">
+                        <div className="relative pl-6 border-l border-red-500/20 space-y-3">
+                          <div className="absolute -left-1.5 top-0.5 w-3 h-3 rounded-full bg-red-600"></div>
+                          <div>
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">1. Head of Global Banking (National)</span>
+                            <p className="text-[10px] text-gray-500 font-mono">Macro Corporate Lending Strategy, Profit & Loss Oversight, and Key Client Relationships</p>
+                          </div>
+
+                          <div className="absolute -left-1.5 top-[52px] w-3 h-3 rounded-full bg-red-600/70"></div>
+                          <div className="pt-2">
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">2. Coverage Director / Zonal Head</span>
+                            <p className="text-[10px] text-gray-500 font-mono">Regional Corporate Coverage portfolios (e.g. West, North, South clusters)</p>
+                          </div>
+
+                          <div className="absolute -left-1.5 top-[108px] w-3 h-3 rounded-full bg-red-600/50"></div>
+                          <div className="pt-2">
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">3. Senior Relationship Manager (SRM)</span>
+                            <p className="text-[10px] text-gray-500 font-mono">Large Corporate Client coverage, debt advisory mandates, and cross-selling treasury/GM products</p>
+                          </div>
+
+                          <div className="absolute -left-1.5 top-[164px] w-3 h-3 rounded-full bg-red-600/30"></div>
+                          <div className="pt-2">
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">4. Associate RM / Credit Analyst</span>
+                            <p className="text-[10px] text-gray-500 font-mono">CMA data analysis, balance sheet stress testing, drafting Credit Papers, and covenant monitoring</p>
+                          </div>
+
+                          <div className="absolute -left-1.5 top-[220px] w-3 h-3 rounded-full bg-red-600/20"></div>
+                          <div className="pt-2">
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">5. Analyst</span>
+                            <p className="text-[10px] text-gray-500 font-mono">Corporate financial modeling, data aggregation, and client presentation decks</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Finance Jargon Cheat Sheet */}
+                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-widest font-mono">
+                      Essential Finance Terminologies for the PPI Room
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                        <p className="font-bold text-red-500 mb-1">DSCR</p>
+                        <p className="text-gray-400 leading-normal font-sans">
+                          <span className="font-bold text-white block">Debt Service Coverage Ratio:</span> Net Operating Income / Debt Service. Measures borrower's ability to service debt principal and interest.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                        <p className="font-bold text-red-500 mb-1">Debt Syndication</p>
+                        <p className="text-gray-400 leading-normal font-sans">
+                          A consortium of banks combining resources to fund a large corporate loan (consortium loan) under a lead arranger to distribute risk exposure.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                        <p className="font-bold text-red-500 mb-1">CMA Data</p>
+                        <p className="text-gray-400 leading-normal font-sans">
+                          <span className="font-bold text-white block">Credit Monitoring Arrangement:</span> Standardized RBI report forecasting working capital statements and loan repayment capacity.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                        <p className="font-bold text-red-500 mb-1">WACC</p>
+                        <p className="text-gray-400 leading-normal font-sans">
+                          <span className="font-bold text-white block">Weighted Average Cost of Capital:</span> Hurdle rate representing the average rate of financing costs across both equity and debt security brackets.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="deepdive"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6"
+                >
+                  {/* Masterclass Header */}
+                  <div className="p-6 rounded-2xl bg-[#0B0F19] border border-gray-800 relative overflow-hidden">
+                    <div className="absolute right-0 top-0 w-48 h-48 bg-red-600/10 rounded-full blur-3xl"></div>
+                    <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <Award className="w-5 h-5 text-red-500" />
+                      Tata Consumer Products Limited (TCPL) Corporate Intelligence Deck
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-2 leading-relaxed max-w-3xl">
+                      A comprehensive technical repository summarizing TCPL's corporate identity, strategic growth pillars, leadership team, brand matrix, and physical distribution hierarchy. 
+                    </p>
+                  </div>
+
+                  {/* 1. Vision, Mission & Values Block */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    {/* Vision Card */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                      <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                        <span>👁️</span> Core Vision
+                      </h4>
+                      <p className="text-sm font-extrabold text-white leading-snug">
+                        "To build better lives and thriving communities."
+                      </p>
+                      <p className="text-xs text-gray-400 leading-relaxed pt-1">
+                        Roots TCPL's commercial operations back to the core Tata Group philosophy of community enrichment, shared trust, and long-term societal value.
                       </p>
                     </div>
 
-                    <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
-                      <p className="font-bold text-red-500 mb-1">Beat Plan / PJP</p>
-                      <p className="text-gray-400 leading-normal font-sans">
-                        Permanent Journey Plan. The fixed physical route a DSR walks on specific days (e.g. Monday: Sector 1 beat) to maintain high retail touchpoints.
+                    {/* Mission Card */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                      <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                        <span>🚀</span> Company Mission
+                      </h4>
+                      <p className="text-sm font-extrabold text-white leading-snug">
+                        "To keep passionately growing and innovating every day."
+                      </p>
+                      <p className="text-xs text-gray-400 leading-relaxed pt-1">
+                        Drives the aggressive transformation from a traditional plantation/bulk commodity business (Tata Tea/Tata Coffee) to a fast-moving, high-margin consumer staples and products giant.
                       </p>
                     </div>
 
-                    <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
-                      <p className="font-bold text-red-500 mb-1">LPC & LPB</p>
-                      <p className="text-gray-400 leading-normal font-sans">
-                        <span className="font-bold text-white">LPC (Lines Per Call):</span> Number of distinct SKUs sold in a visit. 
-                        <span className="font-bold text-white block">LPB (Lines Per Bill):</span> Focuses on increasing assortment breadth on retailer shelves.
-                      </p>
+                    {/* Core Values Card */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-3">
+                      <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-2 font-mono">
+                        <span>🛡️</span> Five Core Values
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-white font-mono">
+                        <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">🤝 EMPATHY</div>
+                        <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">⚖️ INTEGRITY</div>
+                        <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">⚡ AGILITY</div>
+                        <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-800">🏆 EXCELLENCE</div>
+                        <div className="bg-[#0B0F19] col-span-2 px-2.5 py-1.5 rounded border border-gray-800 text-center">🎯 OWNERSHIP</div>
+                      </div>
                     </div>
 
-                    <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
-                      <p className="font-bold text-red-500 mb-1">Strike Rate</p>
-                      <p className="text-gray-400 leading-normal font-sans">
-                        (Productive Outlets Visited / Total Outlets Visited) × 100. A primary indicator of frontline DSR efficiency and beat layout health.
-                      </p>
+                  </div>
+
+                  {/* 2. Leadership and Governance Panel */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* Executive Management */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-red-500" />
+                        Executive Leadership Team
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                          <div>
+                            <p className="text-xs font-extrabold text-white uppercase tracking-wider">Sunil D'Souza</p>
+                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">Managing Director & Chief Executive Officer (MD & CEO)</p>
+                          </div>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-red-400 bg-red-950/20 px-2 py-0.5 rounded border border-red-900/30">Head</span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                          <div>
+                            <p className="text-xs font-extrabold text-white uppercase tracking-wider">Ajit Krishnakumar</p>
+                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">Executive Director & Chief Operating Officer (ED & COO)</p>
+                          </div>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-850">Operations</span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850 flex items-start justify-between">
+                          <div>
+                            <p className="text-xs font-extrabold text-white uppercase tracking-wider">Ashish Goenka</p>
+                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">Group Chief Financial Officer (CFO)</p>
+                          </div>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 bg-gray-900 px-2 py-0.5 rounded border border-gray-850">Finance</span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Board of Directors */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                        <Info className="w-4 h-4 text-red-500" />
+                        Board of Directors
+                      </h4>
+                      <div className="space-y-3 text-xs">
+                        <div className="p-3 rounded-xl bg-[#0B0F19]/60 border border-gray-850">
+                          <p className="text-xs font-extrabold text-white uppercase tracking-wider">Mr. N. Chandrasekaran</p>
+                          <p className="text-[10px] text-gray-500 font-mono mt-0.5">Chairman (Non-Executive Director) • Also Chairman of Tata Sons</p>
+                        </div>
+                        
+                        <div>
+                          <span className="font-bold text-white text-[10px] uppercase tracking-wider block mb-1">Key Independent Directors</span>
+                          <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400 font-mono">
+                            <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">👨‍⚖️ Dr. K. P. Krishnan</div>
+                            <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">🛒 Mr. Bharat Puri</div>
+                            <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">💼 Ms. Shikha Sharma</div>
+                            <div className="bg-[#0B0F19] px-2.5 py-1.5 rounded border border-gray-850">🔬 Mr. David Crean</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* 3. Strategic Framework (6 Pillars) & Sustainability */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    {/* The Six Strategic Pillars */}
+                    <div className="md:col-span-2 p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-yellow-500" />
+                        The Six Growth Pillars ("How We Win")
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">1. Strengthen Core & Scale Growth</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed">Protect tea/salt market share while aggressively scaling high-growth businesses (Tata Sampann, Tata Coffee).</p>
+                        </div>
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">2. Build on New Opportunities</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed">Expand portfolio organically and inorganically (acquisitions of Capital Foods and Organic India) to target premium segments.</p>
+                        </div>
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">3. Drive Execution Excellence</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed">Focus on premiumization, cost optimization, expanding rural coverage, and optimizing distributor fill rates.</p>
+                        </div>
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">4. Digital & Innovation Acceleration</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed">Use SFA (Sales Force Automation) systems, digital supply chain tracking, and launching digital-first premium offerings.</p>
+                        </div>
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">5. Future-Ready Organization</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed">Build strong cross-functional sales/marketing capabilities and integrate post-merner operations.</p>
+                        </div>
+                        <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-850">
+                          <p className="font-bold text-white mb-1">6. Embed Sustainability</p>
+                          <p className="text-gray-400 text-[11px] leading-relaxed">Integrate environmental responsibility and social impact across sourcing, packaging, and community relations.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sustainability Commitment */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest border-b border-gray-800/60 pb-2 flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-green-500" />
+                        #ForBetter Sustainability Focus
+                      </h4>
+                      <div className="space-y-3 text-xs text-gray-400">
+                        <div className="pb-2 border-b border-gray-850">
+                          <span className="font-bold text-white block">For Better Sourcing</span>
+                          <p className="text-[11px] mt-0.5">100% sustainable agricultural raw materials, supporting tea and coffee growers.</p>
+                        </div>
+                        <div className="pb-2 border-b border-gray-850">
+                          <span className="font-bold text-white block">For a Better Planet</span>
+                          <p className="text-[11px] mt-0.5">Zero-waste to landfills, water-neutral manufacturing, and circular packaging transitions.</p>
+                        </div>
+                        <div className="pb-2 border-b border-gray-850">
+                          <span className="font-bold text-white block">For Better Communities</span>
+                          <p className="text-[11px] mt-0.5">Empowering small tea growers, providing clean water access, and community healthcare.</p>
+                        </div>
+                        <div>
+                          <span className="font-bold text-white block">For Better Nutrition</span>
+                          <p className="text-[11px] mt-0.5">Tata Sampann unpolished staples and Organic India health products delivering clean food.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* 4. Brand Matrix & Sales Hierarchy Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* House of Brands */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-800/60 pb-2">
+                        <GitMerge className="w-4 h-4 text-red-500" />
+                        Integrated Brand Portfolio
+                      </h4>
+                      
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Beverages Division</span>
+                          <p className="text-gray-400 leading-normal mt-0.5">
+                            Tata Tea (Agni, Premium, Gold, Chakra Gold), Tetley (green/infusion teas), Tata Coffee (Grand, premium beans), Starbucks JV (Tata Starbucks India).
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Foods & Staples Division</span>
+                          <p className="text-gray-400 leading-normal mt-0.5">
+                            Tata Salt (Lite, SuperLite, Rock Salt), Tata Sampann (pulses, spices, dry fruits, unpolished rice, ready-to-cook mixes).
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="font-bold text-white text-[11px] uppercase tracking-wider block">Acquisitions & Growth Vehicles</span>
+                          <p className="text-gray-400 leading-normal mt-0.5">
+                            <span className="font-bold text-white">Capital Foods:</span> Ching's Secret (condiments, instant Chinese noodles) and Smith & Jones (pastes, ginger garlic, aids). 
+                            <span className="font-bold text-white block mt-0.5">Organic India:</span> Organic herbal tea infusions, wellness capsules, and healthy groceries.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* GTM Sales Hierarchy */}
+                    <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2 border-b border-gray-800/60 pb-2">
+                        <Layers className="w-4 h-4 text-red-500" />
+                        Traditional General Trade Sales Hierarchy
+                      </h4>
+
+                      <div className="space-y-3 text-xs">
+                        <div className="relative pl-6 border-l border-red-500/20 space-y-3">
+                          <div className="absolute -left-1.5 top-0.5 w-3 h-3 rounded-full bg-red-600"></div>
+                          <div>
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">1. National Sales Manager (NSM)</span>
+                            <p className="text-[10px] text-gray-500 font-mono">Macro Channel Strategy & National Revenue</p>
+                          </div>
+
+                          <div className="absolute -left-1.5 top-[52px] w-3 h-3 rounded-full bg-red-600/70"></div>
+                          <div className="pt-2">
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">2. Regional Sales Manager (RSM)</span>
+                            <p className="text-[10px] text-gray-500 font-mono">Zonal Head (Zonal profit & loss, C&F Agent efficiency)</p>
+                          </div>
+
+                          <div className="absolute -left-1.5 top-[108px] w-3 h-3 rounded-full bg-red-600/50"></div>
+                          <div className="pt-2">
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">3. Area Sales Manager (ASM)</span>
+                            <p className="text-[10px] text-gray-500 font-mono">District/State cluster control (Primary target, distributor ROI)</p>
+                          </div>
+
+                          <div className="absolute -left-1.5 top-[164px] w-3 h-3 rounded-full bg-red-600/30"></div>
+                          <div className="pt-2">
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">4. Territory Sales Executive (TSE) / SO</span>
+                            <p className="text-[10px] text-gray-500 font-mono">Secondary sales target, distributor liquidity, beat planning</p>
+                          </div>
+
+                          <div className="absolute -left-1.5 top-[220px] w-3 h-3 rounded-full bg-red-600/20"></div>
+                          <div className="pt-2">
+                            <span className="font-bold text-white text-[11px] uppercase tracking-wider block">5. Distributor Sales Representative (DSR)</span>
+                            <p className="text-[10px] text-gray-500 font-mono">Frontline beat walker (Daily strike rate, LPC, LPB)</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* S&D Jargon Cheat Sheet */}
+                  <div className="p-6 rounded-2xl bg-[#121724]/70 border border-gray-800 space-y-4">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-widest font-mono">
+                      Essential S&D Terminologies for the PPI Room
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                        <p className="font-bold text-red-500 mb-1">Primary vs Secondary</p>
+                        <p className="text-gray-400 leading-normal font-sans">
+                          <span className="font-bold text-white">Primary:</span> Company to Distributor. 
+                          <span className="font-bold text-white block">Secondary:</span> Distributor to Retailer (Kirana). ASMs track secondary as it represents real market demand.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                        <p className="font-bold text-red-500 mb-1">Beat Plan / PJP</p>
+                        <p className="text-gray-400 leading-normal font-sans">
+                          Permanent Journey Plan. The fixed physical route a DSR walks on specific days (e.g. Monday: Sector 1 beat) to maintain high retail touchpoints.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                        <p className="font-bold text-red-500 mb-1">LPC & LPB</p>
+                        <p className="text-gray-400 leading-normal font-sans">
+                          <span className="font-bold text-white">LPC (Lines Per Call):</span> Number of distinct SKUs sold in a visit. 
+                          <span className="font-bold text-white block">LPB (Lines Per Bill):</span> Focuses on increasing assortment breadth on retailer shelves.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#0B0F19]/60 p-3 rounded-xl border border-gray-800/80">
+                        <p className="font-bold text-red-500 mb-1">Strike Rate</p>
+                        <p className="text-gray-400 leading-normal font-sans">
+                          (Productive Outlets Visited / Total Outlets Visited) × 100. A primary indicator of frontline DSR efficiency and beat layout health.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            )}        </div>
                   </div>
                 </div>
               </motion.div>

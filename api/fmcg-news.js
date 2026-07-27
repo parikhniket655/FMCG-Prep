@@ -162,7 +162,13 @@ export default async function handler(req, res) {
   } else if (category === 'Consumer') {
     searchQuery = '"consumer demand India" OR "consumption spending India" OR "consumer goods India"';
   } else if (category === 'Economy') {
-    searchQuery = '"Indian economy" OR "inflation India" OR "RBI macroeconomics"';
+    searchQuery = '"Indian economy" OR "inflation India" OR "RBI monetary policy"';
+  } else if (category === 'Banking') {
+    searchQuery = '"Indian banking sector" OR "corporate banking India" OR "private banks India"';
+  } else if (category === 'HSBC') {
+    searchQuery = '"HSBC India" OR "HSBC banking" OR "Hongkong and Shanghai Banking Corporation"';
+  } else if (category === 'Markets') {
+    searchQuery = '"Indian stock market" OR "nifty sensex" OR "bond yields India"';
   }
 
   try {
@@ -195,6 +201,12 @@ export default async function handler(req, res) {
       categoryMockArticles = mockArticles.filter(art => art.category === 'E-Commerce' || art.category === 'Retail');
     } else if (category === 'Economy') {
       categoryMockArticles = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Agri-Business');
+    } else if (category === 'HSBC') {
+      categoryMockArticles = mockArticles.filter(art => art.category === 'HSBC');
+    } else if (category === 'Banking') {
+      categoryMockArticles = mockArticles.filter(art => art.category === 'Banking' || art.category === 'HSBC');
+    } else if (category === 'Markets') {
+      categoryMockArticles = mockArticles.filter(art => art.category === 'Banking' || art.category === 'HSBC');
     }
 
     // Force category tags of mock fallback to match requested tab for visual consistency
@@ -225,6 +237,12 @@ export default async function handler(req, res) {
       fallback = mockArticles.filter(art => art.category === 'E-Commerce' || art.category === 'Retail');
     } else if (category === 'Economy') {
       fallback = mockArticles.filter(art => art.category === 'FMCG' || art.category === 'Agri-Business');
+    } else if (category === 'HSBC') {
+      fallback = mockArticles.filter(art => art.category === 'HSBC');
+    } else if (category === 'Banking') {
+      fallback = mockArticles.filter(art => art.category === 'Banking' || art.category === 'HSBC');
+    } else if (category === 'Markets') {
+      fallback = mockArticles.filter(art => art.category === 'Banking' || art.category === 'HSBC');
     }
 
     const normalizedFallback = fallback.map(art => ({
