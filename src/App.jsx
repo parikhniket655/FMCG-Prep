@@ -380,9 +380,9 @@ export default function App() {
         >
           <div className="text-center space-y-2">
             <div className="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center font-extrabold text-white text-2xl tracking-wider mx-auto shadow-lg shadow-red-600/20">
-              T
+              P
             </div>
-            <h1 className="text-xl font-extrabold text-white tracking-wider uppercase mt-4">FMCG Intelligence Portal</h1>
+            <h1 className="text-xl font-extrabold text-white tracking-wider uppercase mt-4">Path To Offers</h1>
             <p className="text-xs text-gray-400">Professional Case & Go-to-Market Simulator</p>
           </div>
 
