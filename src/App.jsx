@@ -428,8 +428,8 @@ export default function App() {
                   }}
                   className="w-full px-4 py-2.5 rounded-xl bg-[#121724] border border-gray-800 text-sm text-white focus:outline-none focus:border-red-500/50 transition-colors cursor-pointer"
                 >
-                  <option value="TCPL">TCPL (Tata Consumer)</option>
-                  <option value="HSBC">HSBC (Finance Hub)</option>
+                  <option value="TCPL">TCPL (Tata Consumer Products Limited)</option>
+                  <option value="HSBC">HSBC (Hongkong and Shanghai Banking Corporation)</option>
                 </select>
               </div>
 
